@@ -1,0 +1,45 @@
+{
+  "name": "batch-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n client,server -c blue,green \"vite\" \"node server/index.js\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "setup:stripe": "node server/scripts/setup-stripe-products.js",
+    "test": "node server/test/run-tests.js",
+    "lint": "eslint .",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.11.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "express-slow-down": "^3.1.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^9.0.1",
+    "pg": "^8.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "stripe": "^22.2.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.8.0",
+    "typescript": "^7.0.2",
+    "vite": "^6.0.0"
+  }
+}

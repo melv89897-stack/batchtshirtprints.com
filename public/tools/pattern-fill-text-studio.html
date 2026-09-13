@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATCH Pattern Studio — Pattern-Fill Text Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;600;700&family=Anton&family=Archivo+Black&family=Bebas+Neue&family=Bungee&family=Oswald:wght@600;700&family=Abril+Fatface&family=DM+Serif+Display&family=Permanent+Marker&family=Playfair+Display:wght@700;900&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --ink:#0C0913;--ink2:#140F1F;--ink3:#1B1429;--raised:#221934;
+  --line:#2E2342;--line-soft:#241A37;
+  --text:#F4EFFF;--muted:#B0A4CC;--muted2:#8E83AE;
+  --coral:#FF7A4D;--pink:#FF3D8B;--violet:#B14DFF;--indigo:#6A5BFF;--amber:#FFC24D;
+  --brand:linear-gradient(115deg,#FF7A4D 0%,#FF3D8B 38%,#B14DFF 72%,#6A5BFF 100%);
+  --glow:0 0 40px rgba(177,77,255,.35);--r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(60% 50% at 12% -5%,rgba(255,61,139,.20),transparent 60%),radial-gradient(50% 45% at 95% 0%,rgba(106,91,255,.22),transparent 60%),radial-gradient(45% 40% at 80% 100%,rgba(177,77,255,.14),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding:0 22px 80px}
+.hero{padding:46px 0 30px}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);padding:8px 14px;border:1px solid var(--line);border-radius:100px;background:rgba(255,255,255,.02)}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:var(--glow);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(40px,7vw,84px);line-height:.94;letter-spacing:-.03em;margin:20px 0 0}
+h1 .grad{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin-top:18px;max-width:580px;color:var(--muted);font-size:clamp(15px,1.7vw,18px);line-height:1.5}
+.studio{display:grid;grid-template-columns:330px minmax(0,1fr) 360px;gap:18px;margin-top:34px;align-items:start}
+@media(max-width:1180px){.studio{grid-template-columns:1fr 1fr}.panel.preview{grid-column:1/-1}}
+@media(max-width:760px){.studio{grid-template-columns:1fr}}
+.panel{background:linear-gradient(180deg,rgba(34,25,52,.55),rgba(20,15,31,.55));border:1px solid var(--line);border-radius:var(--r);padding:20px;backdrop-filter:blur(14px)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.phead .ix{font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;color:var(--violet)}
+.phead h2{font-size:14px;font-weight:600;letter-spacing:.02em}
+.phead .hint{margin-left:auto;font-size:11px;color:var(--muted2)}
+label.fld{display:block;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
+label.fld:first-of-type{margin-top:0}
+textarea,input[type=text]{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:12px 13px;font-family:inherit;font-size:14px;resize:vertical;transition:.15s}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(177,77,255,.18)}
+textarea::placeholder{color:var(--muted2)}
+.mono{font-family:'Space Grotesk';letter-spacing:.01em}
+.help{font-size:12px;color:#BBAFD4;margin-top:7px;line-height:1.5}
+.row{display:flex;gap:8px}
+.btn{font-family:inherit;font-weight:600;font-size:13.5px;border:none;border-radius:11px;padding:11px 16px;cursor:pointer;transition:.16s;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--text)}
+.btn.ghost{background:var(--ink3);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--violet);background:var(--raised)}
+.btn.primary{background:var(--brand);color:#fff;font-weight:700;box-shadow:0 8px 30px rgba(177,77,255,.30);position:relative;overflow:hidden}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.28),transparent);transform:translateX(-120%);transition:.5s}
+.btn.primary:hover::after{transform:translateX(120%)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 38px rgba(177,77,255,.45)}
+.btn.full{width:100%}.btn.big{padding:15px 18px;font-size:15px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.seg{display:flex;background:var(--ink);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{flex:1;min-width:fit-content;border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;padding:8px 6px;border-radius:8px;cursor:pointer;transition:.14s}
+.seg button.on{background:var(--raised);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.seg button:hover:not(.on){color:var(--text)}
+select.styled{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:11px 13px;font-family:inherit;font-size:14px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23B0A4CC' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+select.styled:focus{outline:none;border-color:var(--violet)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sw{width:30px;height:30px;border-radius:9px;cursor:pointer;border:2px solid transparent;transition:.14s;position:relative}
+.sw:hover{transform:scale(1.1)}
+.sw.on{border-color:var(--text);box-shadow:0 0 0 2px var(--ink),0 0 0 4px var(--violet)}
+.sw.pick{display:flex;align-items:center;justify-content:center;background:var(--ink3);border:1px dashed var(--line);overflow:hidden}
+.sw.pick input{position:absolute;inset:-6px;width:140%;height:140%;border:none;padding:0;cursor:pointer;opacity:0}
+.slider{display:flex;align-items:center;gap:12px}
+.slider input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:6px;background:var(--ink3);outline:none}
+.slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--violet);cursor:pointer;box-shadow:0 0 0 4px rgba(177,77,255,.18)}
+.slider input[type=range]::-moz-range-thumb{width:17px;height:17px;border:none;border-radius:50%;background:var(--violet);cursor:pointer}
+.slider .val{font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;min-width:42px;text-align:right;color:var(--muted)}
+/* pattern grid */
+.patgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pat{aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;transition:.14s;background:#222}
+.pat:hover{transform:translateY(-2px)}
+.pat.on{border-color:var(--violet);box-shadow:0 0 0 2px var(--ink),0 0 0 4px rgba(177,77,255,.5)}
+.pat img{width:100%;height:100%;object-fit:cover;display:block}
+.pat .nm{position:absolute;bottom:0;left:0;right:0;font-size:9px;font-weight:600;text-align:center;padding:3px 2px;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff}
+.uploadzone{border:1.5px dashed var(--line);border-radius:11px;padding:16px;text-align:center;cursor:pointer;transition:.15s;font-size:12.5px;color:var(--muted)}
+.uploadzone:hover,.uploadzone.drag{border-color:var(--violet);background:rgba(177,77,255,.06);color:var(--text)}
+.previewbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.previewbar .count{font-family:'Bricolage Grotesque';font-weight:700;font-size:15px}
+.previewbar .count span{color:var(--violet)}
+.previewbar .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.bgseg{display:flex;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;flex-wrap:wrap}
+.bgseg button{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:600;padding:6px 9px;border-radius:7px;cursor:pointer}
+.bgseg button.on{background:var(--raised);color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--ink2);transition:.18s}
+.card:hover{border-color:var(--violet);transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.stagewrap{aspect-ratio:5/6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.bg-brown{background:#5C3B28}.bg-black{background:#16161a}.bg-white{background:#f4f4f4}.bg-cream{background:#EFE6D6}.bg-forest{background:#27402f}
+.stagewrap svg{width:100%;height:100%;display:block}
+.card .meta{display:flex;align-items:center;gap:8px;padding:9px 11px;border-top:1px solid var(--line-soft)}
+.card .meta .label{font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.card .meta .dl{font-size:11px;font-weight:600;color:var(--violet);cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:7px;border:1px solid var(--line);transition:.14s}
+.card .meta .dl:hover{background:var(--raised);border-color:var(--violet)}
+.empty-state{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted2)}
+.empty-state .ico{font-size:40px;margin-bottom:14px}
+.empty-state h3{font-family:'Bricolage Grotesque';font-weight:700;color:var(--text);font-size:18px;margin-bottom:6px}
+.empty-state p{font-size:13.5px;max-width:300px;margin:0 auto;line-height:1.5}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--raised);border:1px solid var(--line);color:var(--text);padding:13px 20px;border-radius:12px;font-size:13.5px;font-weight:500;box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:99;transition:.32s cubic-bezier(.2,.9,.3,1);display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .b{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.foot{text-align:center;color:var(--muted2);font-size:12px;margin-top:50px;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow"><span class="dot"></span>Pattern-Fill Studio</span>
+    <h1>Camo, leopard,<br><span class="grad">flag — in your words.</span></h1>
+    <p class="sub">Type your slogans, pick a pattern, and every letter fills with camo, leopard, cow print or flag — wrapped in a clean outline. The format that owns country & western POD.</p>
+  </header>
+
+  <main class="studio">
+    <!-- LEFT -->
+    <section class="panel">
+      <div class="phead"><span class="ix">01</span><h2>Pattern & words</h2></div>
+      <label class="fld">Pattern library</label>
+      <div class="patgrid" id="patgrid"></div>
+      <label class="fld">Or upload your own</label>
+      <div class="uploadzone" id="uz">Drop an image or click to upload<br><span style="font-size:11px;color:var(--muted2)">PNG · JPG · WebP</span><input type="file" id="upl" accept="image/*" hidden></div>
+
+      <label class="fld">Pattern scale</label>
+      <div class="slider"><input type="range" id="pscale" min="10" max="300" value="100"><span class="val" id="pscaleV">100%</span></div>
+      <label class="fld">Pattern shift X / Y</label>
+      <div class="slider"><input type="range" id="poffx" min="-200" max="200" value="0"><span class="val" id="poffxV">0</span></div>
+      <div class="slider" style="margin-top:8px"><input type="range" id="poffy" min="-200" max="200" value="0"><span class="val" id="poffyV">0</span></div>
+
+      <label class="fld">Your slogans</label>
+      <textarea id="slogans" rows="7" class="mono" placeholder="One per line...">DARLIN'
+MAMA
+HOWDY
+Y'ALL
+HOT MESS
+WILD CHILD
+COWGIRL</textarea>
+
+      <button class="btn primary full big" id="genBtn" style="margin-top:16px">Generate ✦</button>
+    </section>
+
+    <!-- MIDDLE -->
+    <section class="panel">
+      <div class="phead"><span class="ix">02</span><h2>Text & outline</h2><span class="hint">live</span></div>
+      <label class="fld">Font (heavy = best fill)</label>
+      <select id="font" class="styled"></select>
+      <label class="fld">Curve</label>
+      <div class="seg" id="curve">
+        <button data-v="straight" class="on">Straight</button>
+        <button data-v="up">Arch up</button>
+        <button data-v="down">Arch down</button>
+      </div>
+      <label class="fld">Curve intensity</label>
+      <div class="slider"><input type="range" id="curveAmt" min="0" max="100" value="40"><span class="val" id="curveAmtV">40</span></div>
+      <label class="fld">Case</label>
+      <div class="seg" id="transform">
+        <button data-v="uppercase" class="on">UPPER</button>
+        <button data-v="none">As typed</button>
+        <button data-v="lowercase">lower</button>
+      </div>
+      <label class="fld">Font size</label>
+      <div class="slider"><input type="range" id="fontSize" min="8" max="34" value="20" step="0.5"><span class="val" id="fontSizeV">20</span></div>
+      <label class="fld">Letter spacing</label>
+      <div class="slider"><input type="range" id="tracking" min="-8" max="20" value="-2" step="0.5"><span class="val" id="trackingV">-2</span></div>
+
+      <label class="fld">Outline color</label>
+      <div class="swatches" id="outSw"></div>
+      <label class="fld">Outline thickness</label>
+      <div class="slider"><input type="range" id="outW" min="0" max="60" value="26"><span class="val" id="outWV">26</span></div>
+      <label class="fld">Outline style</label>
+      <div class="seg" id="outStyle">
+        <button data-v="solid" class="on">Solid</button>
+        <button data-v="distressed">Distressed</button>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="panel preview">
+      <div class="phead"><span class="ix">03</span><h2>Your designs</h2></div>
+      <div class="previewbar">
+        <div class="count"><span id="cnt">0</span> designs</div>
+        <div class="right">
+          <div class="bgseg" id="bg">
+            <button data-v="brown" class="on">Brown</button>
+            <button data-v="black">Black</button>
+            <button data-v="white">White</button>
+            <button data-v="cream">Cream</button>
+            <button data-v="forest">Forest</button>
+          </div>
+          <button class="btn ghost" id="zipBtn" disabled>Download all (ZIP)</button>
+        </div>
+      </div>
+      <div class="grid" id="grid">
+        <div class="empty-state"><div class="ico">✦</div><h3>Pick a pattern & generate</h3><p>Choose a pattern on the left, type your slogans, and hit Generate to fill this board.</p></div>
+      </div>
+    </section>
+  </main>
+  <div class="foot">BATCH Pattern Studio — exports transparent 4500×5400 PNGs, print-ready for Printify, Printful & Etsy.</div>
+</div>
+<div class="toast" id="toast"><span class="b"></span><span id="toastMsg"></span></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const FONTS=["Anton","Archivo Black","Bebas Neue","Bungee","Oswald","Abril Fatface","DM Serif Display","Permanent Marker","Playfair Display","Fraunces"];
+const OUTLINES=[["#FFFFFF","White"],["#F5E6D3","Cream"],["#111111","Black"],["#B84A1F","Rust"]];
+
+/* ---------- procedural pattern generators ---------- */
+function pCanvas(size=256){const c=document.createElement("canvas");c.width=c.height=size;return c;}
+function rnd(a,b){return a+Math.random()*(b-a);}
+function blobs(ctx,size,colors,count,minR,maxR){
+  for(let i=0;i<count;i++){const x=rnd(0,size),y=rnd(0,size),r=rnd(minR,maxR);
+    ctx.fillStyle=colors[Math.floor(rnd(0,colors.length))];
+    ctx.beginPath();const pts=Math.floor(rnd(6,10));
+    for(let p=0;p<=pts;p++){const a=(p/pts)*Math.PI*2,rr=r*rnd(.6,1.1);const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;p===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+    ctx.closePath();ctx.fill();
+    // wrap edges
+    [[size,0],[-size,0],[0,size],[0,-size]].forEach(([dx,dy])=>{ctx.save();ctx.translate(dx,dy);ctx.beginPath();for(let p=0;p<=pts;p++){const a=(p/pts)*Math.PI*2,rr=r*rnd(.6,1.1);const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;p===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.closePath();ctx.fill();ctx.restore();});
+  }
+}
+const PATTERNS={
+  "Realtree Camo":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#5b5238";x.fillRect(0,0,s,s);blobs(x,s,["#3d3a26","#6b6347","#2c2a1c"],14,30,70);blobs(x,s,["#8a7d55","#4a4530"],18,12,30);return c.toDataURL();},
+  "Mossy Camo":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#2f3a26";x.fillRect(0,0,s,s);blobs(x,s,["#1c2417","#46512f","#222a1a"],14,30,70);blobs(x,s,["#5e6b3a","#333d24"],18,12,30);return c.toDataURL();},
+  "Leopard":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#d2a460";x.fillRect(0,0,s,s);
+    for(let i=0;i<26;i++){const cx=rnd(0,s),cy=rnd(0,s),r=rnd(14,24);
+      // tan center
+      x.fillStyle="#a9763a";x.beginPath();x.ellipse(cx,cy,r*.55,r*.5,rnd(0,6),0,7);x.fill();
+      // broken black ring
+      x.strokeStyle="#241a10";x.lineWidth=rnd(4,7);for(let k=0;k<5;k++){const a0=rnd(0,6.2);x.beginPath();x.arc(cx,cy,r,a0,a0+rnd(.6,1.3));x.stroke();}}
+    return c.toDataURL();},
+  "Cow Print":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,s,s);x.fillStyle="#1a1a1a";blobs(x,s,["#1a1a1a"],7,34,64);return c.toDataURL();},
+  "American Flag":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");const stripe=s/13;for(let i=0;i<13;i++){x.fillStyle=i%2?"#f4f4f4":"#b22234";x.fillRect(0,i*stripe,s,stripe+1);}x.fillStyle="#3c3b6e";x.fillRect(0,0,s*.42,stripe*7);x.fillStyle="#fff";for(let r=0;r<5;r++)for(let col=0;col<6;col++){const ox=(r%2)*9;x.beginPath();x.arc(12+col*18+ox,12+r*18,3,0,7);x.fill();}return c.toDataURL();},
+  "Buffalo Plaid":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");const h=s/2;x.fillStyle="#7a0d0d";x.fillRect(0,0,s,s);x.fillStyle="#111";x.fillRect(0,0,h,h);x.fillRect(h,h,h,h);x.fillStyle="rgba(0,0,0,.45)";x.fillRect(h,0,h,h);x.fillRect(0,h,h,h);return c.toDataURL();},
+  "Western Floral":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#efe6d6";x.fillRect(0,0,s,s);for(let i=0;i<10;i++){const cx=rnd(0,s),cy=rnd(0,s),r=rnd(14,26);x.fillStyle="#b06a78";for(let p=0;p<6;p++){const a=p/6*Math.PI*2;x.beginPath();x.ellipse(cx+Math.cos(a)*r*.5,cy+Math.sin(a)*r*.5,r*.4,r*.22,a,0,7);x.fill();}x.fillStyle="#7a8b5a";x.beginPath();x.arc(cx,cy,r*.3,0,7);x.fill();}return c.toDataURL();},
+  "Wood Grain":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#6b4a2c";x.fillRect(0,0,s,s);x.strokeStyle="rgba(60,38,20,.55)";for(let y=0;y<s;y+=7){x.lineWidth=rnd(1,3);x.beginPath();for(let px=0;px<=s;px+=8){x.lineTo(px,y+Math.sin(px*.06+y)*3);}x.stroke();}return c.toDataURL();},
+  "Sunflower":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");x.fillStyle="#3f5230";x.fillRect(0,0,s,s);for(let i=0;i<9;i++){const cx=rnd(0,s),cy=rnd(0,s),r=rnd(16,26);x.fillStyle="#e8b800";for(let p=0;p<12;p++){const a=p/12*Math.PI*2;x.beginPath();x.ellipse(cx+Math.cos(a)*r*.6,cy+Math.sin(a)*r*.6,r*.28,r*.12,a,0,7);x.fill();}x.fillStyle="#5a3a14";x.beginPath();x.arc(cx,cy,r*.34,0,7);x.fill();}return c.toDataURL();},
+  "Serape Stripes":()=>{const s=256,c=pCanvas(s),x=c.getContext("2d");const cols=["#c0392b","#e67e22","#f1c40f","#27ae60","#2980b9","#8e44ad"];const h=s/cols.length;cols.forEach((col,i)=>{x.fillStyle=col;x.fillRect(0,i*h,s,h+1);});x.strokeStyle="rgba(255,255,255,.5)";x.lineWidth=2;for(let i=0;i<=cols.length;i++){x.beginPath();for(let px=0;px<=s;px+=10){x.lineTo(px,i*h+(px/10%2?3:-3));}x.stroke();}return c.toDataURL();}
+};
+const patternCache={};
+function getPattern(name){if(patternCache[name])return patternCache[name];const url=PATTERNS[name]();patternCache[name]=url;return url;}
+
+const state={
+  patName:"Realtree Camo",patURL:null,
+  s:{font:"Anton",curve:"straight",curveAmt:40,transform:"uppercase",fontSize:20,tracking:-2,outColor:"#FFFFFF",outW:26,outStyle:"solid",pscale:100,poffx:0,poffy:0},
+  bg:"brown",designs:[]
+};
+state.patURL=getPattern(state.patName);
+
+/* build pattern grid */
+const pg=$("#patgrid");
+Object.keys(PATTERNS).forEach((name,i)=>{
+  const d=document.createElement("div");d.className="pat"+(i===0?" on":"");d.dataset.name=name;
+  const img=document.createElement("img");img.src=getPattern(name);d.appendChild(img);
+  const nm=document.createElement("div");nm.className="nm";nm.textContent=name;d.appendChild(nm);
+  d.onclick=()=>{state.patName=name;state.patURL=getPattern(name);$$(".pat").forEach(p=>p.classList.remove("on"));d.classList.add("on");renderPreviews();};
+  pg.appendChild(d);
+});
+
+/* upload custom */
+const uz=$("#uz"),upl=$("#upl");
+uz.onclick=()=>upl.click();
+uz.ondragover=e=>{e.preventDefault();uz.classList.add("drag");};
+uz.ondragleave=()=>uz.classList.remove("drag");
+uz.ondrop=e=>{e.preventDefault();uz.classList.remove("drag");if(e.dataTransfer.files[0])loadImg(e.dataTransfer.files[0]);};
+upl.onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0]);};
+function loadImg(file){if(!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)){toast("Please use a PNG, JPG or WebP image");return;}const r=new FileReader();r.onload=()=>{state.patName="Custom";state.patURL=r.result;$$(".pat").forEach(p=>p.classList.remove("on"));uz.innerHTML="✓ Custom pattern loaded — click to change";renderPreviews();toast("Custom pattern loaded");};r.readAsDataURL(file);}
+
+/* font dropdown */
+const fontSel=$("#font");
+FONTS.forEach(f=>{const o=document.createElement("option");o.value=f;o.textContent=f;o.style.fontFamily=`'${f}'`;fontSel.appendChild(o);});
+fontSel.value=state.s.font;
+fontSel.onchange=()=>{state.s.font=fontSel.value;renderPreviews();};
+
+/* outline swatches */
+const osw=$("#outSw");
+OUTLINES.forEach(([hex,name],i)=>{const d=document.createElement("div");d.className="sw"+(i===0?" on":"");d.style.background=hex;d.dataset.hex=hex;d.title=name;
+  d.onclick=()=>{state.s.outColor=hex;$$("#outSw .sw").forEach(x=>x.classList.remove("on"));d.classList.add("on");renderPreviews();};osw.appendChild(d);});
+const opick=document.createElement("label");opick.className="sw pick";opick.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#B0A4CC" stroke-width="2" stroke-linecap="round"/></svg><input type="color" value="#ffffff">`;
+opick.querySelector("input").oninput=e=>{state.s.outColor=e.target.value;$$("#outSw .sw").forEach(x=>x.classList.remove("on"));opick.style.background=e.target.value;opick.querySelector("svg").style.display="none";renderPreviews();};
+osw.appendChild(opick);
+
+/* segmented + sliders */
+function seg(id,key){$("#"+id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("#"+id).children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.s[key]=b.dataset.v;renderPreviews();});}
+seg("curve","curve");seg("transform","transform");seg("outStyle","outStyle");
+$("#bg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("#bg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.bg=b.dataset.v;$$(".stagewrap").forEach(w=>w.className="stagewrap bg-"+state.bg);});
+function slider(id,key,suffix){const el=$("#"+id),v=$("#"+id+"V");el.addEventListener("input",()=>{state.s[key]=parseFloat(el.value);v.textContent=el.value+(suffix||"");renderPreviews();});}
+slider("curveAmt","curveAmt");slider("fontSize","fontSize");slider("tracking","tracking");slider("outW","outW");
+slider("pscale","pscale","%");slider("poffx","poffx");slider("poffy","poffy");
+
+/* ---------- SVG builder ---------- */
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function buildSVG(text){
+  const W=4500,H=5400,s=state.s;
+  let t=text;if(s.transform==="uppercase")t=t.toUpperCase();else if(s.transform==="lowercase")t=t.toLowerCase();
+  const tile=240*(s.pscale/100);
+  const fs=s.fontSize/100*W;
+  const distort=s.outStyle==="distressed"?`<filter id="ds"><feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="22"/></filter>`:"";
+  const filterAttr=s.outStyle==="distressed"?` filter="url(#ds)"`:"";
+  const cx=W/2,cy=H/2;
+  let textEl;
+  const common=`font-family:'${s.font}';font-size:${fs}px;letter-spacing:${s.tracking*(W/450)}px;`;
+  if(s.curve==="straight"){
+    textEl=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" style="${common}" fill="url(#tex)" stroke="${s.outColor}" stroke-width="${s.outW}" stroke-linejoin="round" paint-order="stroke"${filterAttr}>${esc(t)}</text>`;
+  }else{
+    const dir=s.curve==="up"?-1:1;const amt=(s.curveAmt/100)*1400*dir;
+    const y0=cy+(dir<0?500:-500);
+    const path=`M ${W*0.12} ${y0} Q ${cx} ${y0+amt} ${W*0.88} ${y0}`;
+    textEl=`<defs><path id="cp" d="${path}"/></defs><text text-anchor="middle" style="${common}" fill="url(#tex)" stroke="${s.outColor}" stroke-width="${s.outW}" stroke-linejoin="round" paint-order="stroke"${filterAttr}><textPath href="#cp" startOffset="50%">${esc(t)}</textPath></text>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    <defs>${distort}
+      <pattern id="tex" patternUnits="userSpaceOnUse" width="${tile}" height="${tile}" patternTransform="translate(${s.poffx},${s.poffy})">
+        <image href="${state.patURL}" width="${tile}" height="${tile}" preserveAspectRatio="xMidYMid slice"/>
+      </pattern>
+    </defs>${textEl}</svg>`;
+}
+
+/* ---------- preview ---------- */
+function renderPreviews(){
+  const grid=$("#grid");
+  if(!state.designs.length){grid.innerHTML=`<div class="empty-state"><div class="ico">✦</div><h3>Pick a pattern & generate</h3><p>Choose a pattern on the left, type your slogans, and hit Generate to fill this board.</p></div>`;return;}
+  grid.innerHTML="";
+  state.designs.forEach((d,i)=>{
+    const card=document.createElement("div");card.className="card";
+    const sw=document.createElement("div");sw.className="stagewrap bg-"+state.bg;
+    sw.innerHTML=buildSVG(d.text);
+    const meta=document.createElement("div");meta.className="meta";
+    meta.innerHTML=`<span class="label">${esc(d.text)}</span><span class="dl">PNG ↓</span>`;
+    meta.querySelector(".dl").onclick=()=>downloadOne(i);
+    card.appendChild(sw);card.appendChild(meta);grid.appendChild(card);
+  });
+  $("#cnt").textContent=state.designs.length;
+}
+
+/* generate */
+$("#genBtn").onclick=()=>{
+  const lines=$("#slogans").value.split("\n").map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){toast("Add some slogans first");return;}
+  state.designs=lines.map(t=>({text:t}));renderPreviews();
+  $("#zipBtn").disabled=false;toast(state.designs.length+" designs generated ✦");
+  $(".panel.preview").scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+
+/* ---------- export: SVG -> canvas -> PNG ---------- */
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50)||"design";}
+async function svgToPNG(text){
+  await document.fonts.ready;
+  const svg=buildSVG(text);
+  const blob=new Blob([svg],{type:"image/svg+xml;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});
+  const canvas=document.createElement("canvas");canvas.width=4500;canvas.height=5400;
+  canvas.getContext("2d").drawImage(img,0,0,4500,5400);
+  URL.revokeObjectURL(url);
+  return canvas;
+}
+async function downloadOne(i){
+  toast("Rendering print file…");
+  try{const canvas=await svgToPNG(state.designs[i].text);
+    canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=slug(state.patName)+"-"+slug(state.designs[i].text)+".png";a.click();URL.revokeObjectURL(a.href);toast("Downloaded ✦");},"image/png");
+  }catch(e){toast("Render error — try a preset pattern");}
+}
+$("#zipBtn").onclick=async()=>{
+  if(!state.designs.length)return;const btn=$("#zipBtn");btn.disabled=true;const orig=btn.textContent;
+  const zip=new JSZip();
+  for(let i=0;i<state.designs.length;i++){btn.textContent=`Rendering ${i+1}/${state.designs.length}…`;
+    try{const canvas=await svgToPNG(state.designs[i].text);const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));zip.file(slug(state.patName)+"-"+slug(state.designs[i].text)+".png",blob);}catch(e){}
+    await new Promise(r=>setTimeout(r,10));}
+  btn.textContent="Zipping…";const out=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(out);a.download=slug(state.patName)+"-pattern-designs.zip";a.click();URL.revokeObjectURL(a.href);
+  btn.textContent=orig;btn.disabled=false;toast("ZIP downloaded ✦");
+};
+
+let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add("show");clearTimeout(tT);tT=setTimeout(()=>$("#toast").classList.remove("show"),2200);}
+</script>
+</body>
+</html>

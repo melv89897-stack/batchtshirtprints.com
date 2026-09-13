@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATCH Design Suite — Quick Start Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0C0913;--panel:#161020;--line:#2E2342;--text:#F4EFFF;--muted:#B0A4CC;--violet:#B14DFF;
+--brand:linear-gradient(115deg,#FF7A4D,#FF3D8B 40%,#B14DFF 72%,#6A5BFF);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--text);font-family:'Space Grotesk',sans-serif;line-height:1.6;
+background-image:radial-gradient(50% 40% at 10% 0%,rgba(255,61,139,.16),transparent 60%),radial-gradient(45% 40% at 95% 5%,rgba(106,91,255,.18),transparent 60%);min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:50px 24px 70px}
+.eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:7px 14px;border-radius:100px}
+h1{font-family:'Bricolage Grotesque';font-weight:800;font-size:clamp(34px,6vw,56px);line-height:.96;letter-spacing:-.03em;margin:18px 0 12px}
+h1 .g{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--muted);font-size:18px;margin-bottom:36px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 26px;margin-bottom:18px}
+.card h2{font-family:'Bricolage Grotesque';font-weight:700;font-size:22px;margin-bottom:6px}
+.card .tag{font-size:12px;font-weight:600;color:var(--violet);letter-spacing:.06em;text-transform:uppercase}
+.card ol{margin:14px 0 0 20px}
+.card li{margin-bottom:7px}
+.card code{background:#0C0913;border:1px solid var(--line);padding:1px 7px;border-radius:6px;color:#FF7A4D;font-size:14px}
+.tips{background:linear-gradient(180deg,rgba(177,77,255,.08),transparent);border:1px solid var(--line);border-radius:16px;padding:24px 26px;margin-top:26px}
+.tips h2{font-family:'Bricolage Grotesque';font-weight:700;font-size:20px;margin-bottom:10px}
+.tips li{margin-bottom:8px;color:var(--muted)}
+.tips li b{color:var(--text)}
+.foot{text-align:center;color:var(--muted);font-size:13px;margin-top:40px}
+.step{font-family:'Bricolage Grotesque';color:var(--violet);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">Quick Start Guide</span>
+  <h1>Welcome to <span class="g">BATCH</span></h1>
+  <p class="lead">Three tools to make print-ready t-shirt designs in bulk. No installing, no account — just open each file in your web browser (Chrome works great) and go.</p>
+
+  <div class="card">
+    <span class="tag">Tool 1</span>
+    <h2>Bulk Text Generator</h2>
+    <p style="color:var(--muted)">Make dozens of text designs from one template.</p>
+    <ol>
+      <li>Open <code>bulk-tshirt-design-studio.html</code>.</li>
+      <li>Type a template using a placeholder, e.g. <code>{hobby} is my cardio</code>.</li>
+      <li>Add your list (one item per line) in the box below.</li>
+      <li>Pick a font, color, and layout in the middle panel.</li>
+      <li>Hit <span class="step">Generate</span> — then download one design or the whole batch as a ZIP.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="tag">Tool 2</span>
+    <h2>Pattern-Fill Studio</h2>
+    <p style="color:var(--muted)">Fill your letters with camo, leopard, flag, and more.</p>
+    <ol>
+      <li>Open <code>pattern-fill-text-studio.html</code>.</li>
+      <li>Pick a pattern from the library (or upload your own image).</li>
+      <li>Type your slogans, one per line.</li>
+      <li>Choose a heavy font, set the outline color and thickness, and arch the text if you like.</li>
+      <li>Hit <span class="step">Generate</span> and download.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <span class="tag">Tool 3</span>
+    <h2>Slogan + Graphic Remix</h2>
+    <p style="color:var(--muted)">Pair one graphic with a whole list of slogans.</p>
+    <ol>
+      <li>Open <code>slogan-graphic-studio.html</code>.</li>
+      <li>Upload your graphic (a transparent PNG works best).</li>
+      <li>Paste your slogans, one per line. Add optional sub-text if you want.</li>
+      <li>Pick a layout preset and text effect (arched, circle, etc.).</li>
+      <li>Hit <span class="step">Generate</span> and download.</li>
+    </ol>
+  </div>
+
+  <div class="tips">
+    <h2>Pro tips</h2>
+    <ul>
+      <li><b>Every file exports at 4500×5400, 300 DPI, transparent PNG</b> — drop them straight into Printify, Printful, or Etsy.</li>
+      <li><b>Use the background toggle</b> (Clear / White / Black) to check your design reads well on any shirt color before you download.</li>
+      <li><b>Bring your own slogans and artwork</b> so your designs stay original — important for Etsy's rules.</li>
+      <li><b>Check trademarks</b> on the free USPTO database (TESS) before listing — a phrase can be trademarked even if it seems generic.</li>
+      <li><b>Works offline</b> once loaded — but the first open needs internet to grab the fonts.</li>
+    </ul>
+  </div>
+
+  <p class="foot">Made something great? You own every design you create. Happy selling. ✦</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATCH Remix — Slogan + Graphic Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&family=Oswald:wght@600;700&family=Playfair+Display:wght@700;900&family=Abril+Fatface&family=DM+Serif+Display&family=Bungee&family=Space+Grotesk:wght@700&family=Permanent+Marker&family=Caveat:wght@700&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --ink:#0C0913;--ink2:#140F1F;--ink3:#1B1429;--raised:#221934;
+  --line:#2E2342;--line-soft:#241A37;
+  --text:#F4EFFF;--muted:#B0A4CC;--muted2:#8E83AE;
+  --coral:#FF7A4D;--pink:#FF3D8B;--violet:#B14DFF;--indigo:#6A5BFF;--amber:#FFC24D;
+  --brand:linear-gradient(115deg,#FF7A4D 0%,#FF3D8B 38%,#B14DFF 72%,#6A5BFF 100%);
+  --glow:0 0 40px rgba(177,77,255,.35);--r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(60% 50% at 12% -5%,rgba(255,61,139,.20),transparent 60%),radial-gradient(50% 45% at 95% 0%,rgba(106,91,255,.22),transparent 60%),radial-gradient(45% 40% at 80% 100%,rgba(177,77,255,.14),transparent 60%)}
+.wrap{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding:0 22px 80px}
+.hero{padding:46px 0 30px}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);padding:8px 14px;border:1px solid var(--line);border-radius:100px;background:rgba(255,255,255,.02)}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:var(--glow);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(40px,7vw,84px);line-height:.94;letter-spacing:-.03em;margin:20px 0 0}
+h1 .grad{background:var(--brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin-top:18px;max-width:580px;color:var(--muted);font-size:clamp(15px,1.7vw,18px);line-height:1.5}
+.studio{display:grid;grid-template-columns:330px minmax(0,1fr) 360px;gap:18px;margin-top:34px;align-items:start}
+@media(max-width:1180px){.studio{grid-template-columns:1fr 1fr}.panel.preview{grid-column:1/-1}}
+@media(max-width:760px){.studio{grid-template-columns:1fr}}
+.panel{background:linear-gradient(180deg,rgba(34,25,52,.55),rgba(20,15,31,.55));border:1px solid var(--line);border-radius:var(--r);padding:20px;backdrop-filter:blur(14px)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.phead .ix{font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;color:var(--violet)}
+.phead h2{font-size:14px;font-weight:600;letter-spacing:.02em}
+.phead .hint{margin-left:auto;font-size:11px;color:var(--muted2)}
+label.fld{display:block;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
+label.fld:first-of-type{margin-top:0}
+textarea,input[type=text]{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:12px 13px;font-family:inherit;font-size:14px;resize:vertical;transition:.15s}
+textarea:focus,input[type=text]:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(177,77,255,.18)}
+textarea::placeholder,input::placeholder{color:var(--muted2)}
+.mono{font-family:'Space Grotesk';letter-spacing:.01em}
+.help{font-size:12px;color:#BBAFD4;margin-top:7px;line-height:1.5}
+.btn{font-family:inherit;font-weight:600;font-size:13.5px;border:none;border-radius:11px;padding:11px 16px;cursor:pointer;transition:.16s;display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--text)}
+.btn.ghost{background:var(--ink3);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--violet);background:var(--raised)}
+.btn.primary{background:var(--brand);color:#fff;font-weight:700;box-shadow:0 8px 30px rgba(177,77,255,.30);position:relative;overflow:hidden}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.28),transparent);transform:translateX(-120%);transition:.5s}
+.btn.primary:hover::after{transform:translateX(120%)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 38px rgba(177,77,255,.45)}
+.btn.full{width:100%}.btn.big{padding:15px 18px;font-size:15px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.seg{display:flex;background:var(--ink);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{flex:1;min-width:fit-content;border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;padding:8px 6px;border-radius:8px;cursor:pointer;transition:.14s}
+.seg button.on{background:var(--raised);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.seg button:hover:not(.on){color:var(--text)}
+select.styled{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:11px 13px;font-family:inherit;font-size:14px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23B0A4CC' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+select.styled:focus{outline:none;border-color:var(--violet)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sw{width:30px;height:30px;border-radius:9px;cursor:pointer;border:2px solid transparent;transition:.14s;position:relative}
+.sw:hover{transform:scale(1.1)}
+.sw.on{border-color:var(--text);box-shadow:0 0 0 2px var(--ink),0 0 0 4px var(--violet)}
+.sw.pick{display:flex;align-items:center;justify-content:center;background:var(--ink3);border:1px dashed var(--line);overflow:hidden}
+.sw.pick input{position:absolute;inset:-6px;width:140%;height:140%;border:none;padding:0;cursor:pointer;opacity:0}
+.slider{display:flex;align-items:center;gap:12px}
+.slider input[type=range]{flex:1;-webkit-appearance:none;height:5px;border-radius:6px;background:var(--ink3);outline:none}
+.slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--violet);cursor:pointer;box-shadow:0 0 0 4px rgba(177,77,255,.18)}
+.slider input[type=range]::-moz-range-thumb{width:17px;height:17px;border:none;border-radius:50%;background:var(--violet);cursor:pointer}
+.slider .val{font-family:'Bricolage Grotesque';font-weight:700;font-size:13px;min-width:42px;text-align:right;color:var(--muted)}
+.uploadzone{border:1.5px dashed var(--line);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;transition:.15s;font-size:12.5px;color:var(--muted)}
+.uploadzone:hover,.uploadzone.drag{border-color:var(--violet);background:rgba(177,77,255,.06);color:var(--text)}
+.thumb{margin-top:10px;display:none;align-items:center;gap:10px;padding:10px;background:var(--ink);border:1px solid var(--line);border-radius:11px}
+.thumb.show{display:flex}
+.thumb img{width:48px;height:48px;object-fit:contain;background:conic-gradient(#1f1830 90deg,#2a2140 0 180deg,#1f1830 0 270deg,#2a2140 0) 0 0/14px 14px;border-radius:7px}
+.thumb .x{margin-left:auto;color:var(--muted2);cursor:pointer;font-weight:700;padding:4px 8px}
+.thumb .x:hover{color:var(--coral)}
+.collapse{max-height:0;overflow:hidden;transition:.25s}
+.collapse.open{max-height:600px}
+.previewbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.previewbar .count{font-family:'Bricolage Grotesque';font-weight:700;font-size:15px}
+.previewbar .count span{color:var(--violet)}
+.previewbar .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.bgseg{display:flex;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.bgseg button{border:none;background:transparent;color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:7px;cursor:pointer}
+.bgseg button.on{background:var(--raised);color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--ink2);transition:.18s}
+.card:hover{border-color:var(--violet);transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.stagewrap{aspect-ratio:5/6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.bg-transparent{background:conic-gradient(#1f1830 90deg,#2a2140 0 180deg,#1f1830 0 270deg,#2a2140 0) 0 0/22px 22px}
+.bg-white{background:#f4f4f4}.bg-black{background:#16161a}
+.stagewrap svg{width:100%;height:100%;display:block}
+.card .meta{display:flex;align-items:center;gap:8px;padding:9px 11px;border-top:1px solid var(--line-soft)}
+.card .meta .label{font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.card .meta .dl{font-size:11px;font-weight:600;color:var(--violet);cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:7px;border:1px solid var(--line);transition:.14s}
+.card .meta .dl:hover{background:var(--raised);border-color:var(--violet)}
+.empty-state{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted2)}
+.empty-state .ico{font-size:40px;margin-bottom:14px}
+.empty-state h3{font-family:'Bricolage Grotesque';font-weight:700;color:var(--text);font-size:18px;margin-bottom:6px}
+.empty-state p{font-size:13.5px;max-width:300px;margin:0 auto;line-height:1.5}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--raised);border:1px solid var(--line);color:var(--text);padding:13px 20px;border-radius:12px;font-size:13.5px;font-weight:500;box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:99;transition:.32s cubic-bezier(.2,.9,.3,1);display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .b{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.foot{text-align:center;color:var(--muted2);font-size:12px;margin-top:50px;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow"><span class="dot"></span>Slogan + Graphic Remix</span>
+    <h1>One graphic.<br><span class="grad">Every slogan.</span></h1>
+    <p class="sub">Upload a single illustration, drop in a list of slogans, and remix it into a whole collection — arched, stacked, or badge-style — print-ready in one click.</p>
+  </header>
+
+  <main class="studio">
+    <!-- LEFT -->
+    <section class="panel">
+      <div class="phead"><span class="ix">01</span><h2>Graphic & slogans</h2></div>
+      <div class="uploadzone" id="uz">Drop your graphic or click to upload<br><span style="font-size:11px;color:var(--muted2)">Transparent PNG works best</span><input type="file" id="upl" accept="image/*" hidden></div>
+      <div class="thumb" id="thumb"><img id="thumbImg"><span style="font-size:12px">Graphic loaded</span><span class="x" id="thumbX">✕</span></div>
+
+      <label class="fld">Graphic size</label>
+      <div class="slider"><input type="range" id="gsize" min="15" max="90" value="48"><span class="val" id="gsizeV">48%</span></div>
+      <label class="fld">Graphic vertical position</label>
+      <div class="slider"><input type="range" id="gpos" min="15" max="85" value="50"><span class="val" id="gposV">50</span></div>
+      <label class="fld">Graphic alignment</label>
+      <div class="seg" id="galign">
+        <button data-v="left">Left</button><button data-v="center" class="on">Center</button><button data-v="right">Right</button>
+      </div>
+
+      <label class="fld">Your slogans</label>
+      <textarea id="slogans" rows="6" class="mono" placeholder="One per line...">Raised on sweet tea and Jesus
+Born to be wild, forced to work
+Just a girl who loves horses
+Small town girl, big city dreams</textarea>
+
+      <label class="fld">Sub-text (optional, on every design)</label>
+      <input type="text" id="subtext" placeholder="e.g. EST. 2024 or NASHVILLE, TN">
+
+      <button class="btn primary full big" id="genBtn" style="margin-top:16px">Generate ✦</button>
+    </section>
+
+    <!-- MIDDLE -->
+    <section class="panel">
+      <div class="phead"><span class="ix">02</span><h2>Layout & type</h2><span class="hint">live</span></div>
+      <label class="fld">Layout preset</label>
+      <select id="layout" class="styled">
+        <option value="athletic">Vintage Athletic (arched)</option>
+        <option value="stack">Minimalist Stack</option>
+        <option value="badge">Circle Badge</option>
+        <option value="below">Simple Below</option>
+        <option value="custom">Custom</option>
+      </select>
+
+      <label class="fld">Slogan position</label>
+      <div class="seg" id="spos"><button data-v="above" class="on">Above graphic</button><button data-v="below">Below graphic</button></div>
+
+      <label class="fld">Slogan font</label>
+      <select id="font" class="styled"></select>
+      <label class="fld">Slogan color</label>
+      <div class="swatches" id="sw"></div>
+      <label class="fld">Text effect</label>
+      <div class="seg" id="effect">
+        <button data-v="straight" class="on">Straight</button><button data-v="up">Arch up</button><button data-v="down">Arch down</button><button data-v="circle">Circle</button><button data-v="wave">Wave</button>
+      </div>
+      <label class="fld">Curve intensity</label>
+      <div class="slider"><input type="range" id="curveAmt" min="0" max="100" value="45"><span class="val" id="curveAmtV">45</span></div>
+      <label class="fld">Slogan size</label>
+      <div class="slider"><input type="range" id="fontSize" min="5" max="20" value="9" step="0.5"><span class="val" id="fontSizeV">9</span></div>
+      <label class="fld">Letter spacing</label>
+      <div class="slider"><input type="range" id="tracking" min="-2" max="15" value="0" step="0.5"><span class="val" id="trackingV">0</span></div>
+      <label class="fld">Case</label>
+      <div class="seg" id="transform"><button data-v="none" class="on">As typed</button><button data-v="uppercase">UPPER</button><button data-v="lowercase">lower</button></div>
+
+      <div id="subWrap" style="display:none">
+        <label class="fld">Sub-text font</label>
+        <select id="subFont" class="styled"></select>
+        <label class="fld">Sub-text size</label>
+        <div class="slider"><input type="range" id="subSize" min="3" max="12" value="5" step="0.5"><span class="val" id="subSizeV">5</span></div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="panel preview">
+      <div class="phead"><span class="ix">03</span><h2>Your designs</h2></div>
+      <div class="previewbar">
+        <div class="count"><span id="cnt">0</span> designs</div>
+        <div class="right">
+          <div class="bgseg" id="bg"><button data-v="transparent" class="on">Clear</button><button data-v="white">White</button><button data-v="black">Black</button></div>
+          <button class="btn ghost" id="zipBtn" disabled>Download all (ZIP)</button>
+        </div>
+      </div>
+      <div class="grid" id="grid">
+        <div class="empty-state"><div class="ico">✦</div><h3>Upload a graphic & generate</h3><p>Add your illustration and slogans on the left, then hit Generate to remix the whole set.</p></div>
+      </div>
+    </section>
+  </main>
+  <div class="foot">BATCH Remix — exports transparent 4500×5400 PNGs, print-ready for Printify, Printful & Etsy.</div>
+</div>
+<div class="toast" id="toast"><span class="b"></span><span id="toastMsg"></span></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const FONTS=["Bebas Neue","Anton","Archivo Black","Oswald","Playfair Display","Abril Fatface","DM Serif Display","Bungee","Space Grotesk","Permanent Marker","Caveat","Fraunces"];
+const COLORS=[["#111111","Black"],["#FFFFFF","White"],["#F5E6D3","Cream"],["#B84A1F","Rust"],["#2D4F3F","Forest"],["#D4A017","Mustard"]];
+
+const state={
+  graphic:null,gAspect:1,
+  s:{gsize:48,gpos:50,galign:"center",spos:"above",font:"Bebas Neue",color:"#111111",effect:"straight",curveAmt:45,fontSize:9,tracking:0,transform:"none",subFont:"Bebas Neue",subSize:5},
+  subtext:"",bg:"transparent",designs:[]
+};
+
+/* presets apply bundles */
+const LAYOUTS={
+  athletic:{spos:"above",effect:"up"},
+  stack:{spos:"above",effect:"straight"},
+  badge:{spos:"above",effect:"circle"},
+  below:{spos:"below",effect:"straight"},
+  custom:{}
+};
+$("#layout").onchange=()=>{const l=LAYOUTS[$("#layout").value];Object.assign(state.s,l);syncUI();renderPreviews();};
+
+/* upload */
+const uz=$("#uz"),upl=$("#upl");
+uz.onclick=()=>upl.click();
+uz.ondragover=e=>{e.preventDefault();uz.classList.add("drag");};
+uz.ondragleave=()=>uz.classList.remove("drag");
+uz.ondrop=e=>{e.preventDefault();uz.classList.remove("drag");if(e.dataTransfer.files[0])loadImg(e.dataTransfer.files[0]);};
+upl.onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0]);};
+function loadImg(file){if(!/^image\/(png|jpe?g|webp|gif)$/.test(file.type)){toast("Please use a PNG, JPG or WebP image");return;}const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{state.graphic=r.result;state.gAspect=img.naturalHeight/img.naturalWidth;$("#thumbImg").src=r.result;$("#thumb").classList.add("show");renderPreviews();toast("Graphic loaded ✦");};img.src=r.result;};r.readAsDataURL(file);}
+$("#thumbX").onclick=()=>{state.graphic=null;$("#thumb").classList.remove("show");upl.value="";renderPreviews();};
+
+/* fonts */
+[["#font","font"],["#subFont","subFont"]].forEach(([sel,key])=>{const el=$(sel);FONTS.forEach(f=>{const o=document.createElement("option");o.value=f;o.textContent=f;o.style.fontFamily=`'${f}'`;el.appendChild(o);});el.value=state.s[key];el.onchange=()=>{state.s[key]=el.value;renderPreviews();};});
+
+/* color swatches */
+const sw=$("#sw");
+COLORS.forEach(([hex,name],i)=>{const d=document.createElement("div");d.className="sw"+(i===0?" on":"");d.style.background=hex;d.dataset.hex=hex;d.title=name;d.onclick=()=>{state.s.color=hex;$$("#sw .sw").forEach(x=>x.classList.remove("on"));d.classList.add("on");renderPreviews();};sw.appendChild(d);});
+const pick=document.createElement("label");pick.className="sw pick";pick.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#B0A4CC" stroke-width="2" stroke-linecap="round"/></svg><input type="color" value="#ff3d8b">`;
+pick.querySelector("input").oninput=e=>{state.s.color=e.target.value;$$("#sw .sw").forEach(x=>x.classList.remove("on"));pick.style.background=e.target.value;pick.querySelector("svg").style.display="none";renderPreviews();};
+sw.appendChild(pick);
+
+/* segmented + sliders */
+function seg(id,key){$("#"+id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("#"+id).children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.s[key]=b.dataset.v;renderPreviews();});}
+seg("galign","galign");seg("spos","spos");seg("effect","effect");seg("transform","transform");
+$("#bg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("#bg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.bg=b.dataset.v;$$(".stagewrap").forEach(w=>w.className="stagewrap bg-"+state.bg);});
+function slider(id,key,suffix){const el=$("#"+id),v=$("#"+id+"V");el.addEventListener("input",()=>{state.s[key]=parseFloat(el.value);v.textContent=el.value+(suffix||"");renderPreviews();});}
+slider("gsize","gsize","%");slider("gpos","gpos");slider("curveAmt","curveAmt");slider("fontSize","fontSize");slider("tracking","tracking");slider("subSize","subSize");
+$("#subtext").oninput=()=>{state.subtext=$("#subtext").value.trim();$("#subWrap").style.display=state.subtext?"block":"none";renderPreviews();};
+
+function syncUI(){
+  ["galign","spos","effect","transform"].forEach(id=>{[...$("#"+id).children].forEach(b=>b.classList.toggle("on",b.dataset.v===state.s[id]));});
+  $("#font").value=state.s.font;
+}
+
+/* ---------- SVG builder ---------- */
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function tcase(t){const s=state.s;if(s.transform==="uppercase")return t.toUpperCase();if(s.transform==="lowercase")return t.toLowerCase();return t;}
+function curvedText(t,cx,baselineY,fs,color,font,track,effect,amt,id){
+  const W=4500;const common=`font-family:'${font}';font-size:${fs}px;letter-spacing:${track*(W/450)}px;`;
+  if(effect==="straight"||!effect){
+    return `<text x="${cx}" y="${baselineY}" text-anchor="middle" style="${common}" fill="${color}">${esc(t)}</text>`;
+  }
+  if(effect==="circle"){
+    const r=amt;const path=`M ${cx-r} ${baselineY} a ${r} ${r} 0 1 1 ${2*r} 0 a ${r} ${r} 0 1 1 ${-2*r} 0`;
+    return `<defs><path id="${id}" d="${path}"/></defs><text style="${common}" fill="${color}" text-anchor="middle"><textPath href="#${id}" startOffset="25%">${esc(t)}</textPath></text>`;
+  }
+  let dir=effect==="up"?-1:1;
+  if(effect==="wave"){
+    const a=(amt/100)*420;const path=`M ${W*0.13} ${baselineY} q ${W*0.18} ${-a} ${W*0.37} 0 t ${W*0.37} 0`;
+    return `<defs><path id="${id}" d="${path}"/></defs><text style="${common}" fill="${color}" text-anchor="middle"><textPath href="#${id}" startOffset="50%">${esc(t)}</textPath></text>`;
+  }
+  const bow=(amt/100)*900*dir;
+  const path=`M ${W*0.13} ${baselineY} Q ${cx} ${baselineY+bow} ${W*0.87} ${baselineY}`;
+  return `<defs><path id="${id}" d="${path}"/></defs><text style="${common}" fill="${color}" text-anchor="middle"><textPath href="#${id}" startOffset="50%">${esc(t)}</textPath></text>`;
+}
+function buildSVG(slogan){
+  const W=4500,H=5400,s=state.s;
+  const gW=s.gsize/100*W;const gH=gW*state.gAspect;
+  let gX;if(s.galign==="left")gX=W*0.10;else if(s.galign==="right")gX=W-gW-W*0.10;else gX=(W-gW)/2;
+  const gCY=s.gpos/100*H;const gY=gCY-gH/2;
+  const cx=gX+gW/2;
+  const fs=s.fontSize/100*W;
+  const subFs=s.subSize/100*W;
+  const gap=W*0.04;
+  let img=state.graphic?`<image href="${state.graphic}" x="${gX}" y="${gY}" width="${gW}" height="${gH}" preserveAspectRatio="xMidYMid meet"/>`:"";
+  const main=tcase(slogan);
+  let sloganEl="",subEl="";
+  if(s.effect==="circle"&&state.graphic){
+    const r=gW*0.62;
+    sloganEl=curvedText(main,cx,gCY,fs,s.color,s.font,s.tracking,"circle",r,"mp");
+  }else{
+    const mainBaseline=s.spos==="above"?(gY-gap):(gY+gH+gap+fs);
+    sloganEl=curvedText(main,cx,mainBaseline,fs,s.color,s.font,s.tracking,s.effect,s.curveAmt,"mp");
+  }
+  if(state.subtext){
+    const subBaseline=s.spos==="above"?(gY+gH+gap+subFs):(gY-gap*0.7);
+    subEl=curvedText(tcase(state.subtext),cx,subBaseline,subFs,s.color,s.subFont,s.tracking,(s.effect==="circle"?"straight":s.effect==="up"?"down":s.effect==="down"?"up":"straight"),s.curveAmt,"sp");
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${img}${sloganEl}${subEl}</svg>`;
+}
+
+/* preview */
+function renderPreviews(){
+  const grid=$("#grid");
+  if(!state.designs.length){grid.innerHTML=`<div class="empty-state"><div class="ico">✦</div><h3>Upload a graphic & generate</h3><p>Add your illustration and slogans on the left, then hit Generate to remix the whole set.</p></div>`;return;}
+  grid.innerHTML="";
+  state.designs.forEach((d,i)=>{
+    const card=document.createElement("div");card.className="card";
+    const sw=document.createElement("div");sw.className="stagewrap bg-"+state.bg;
+    sw.innerHTML=buildSVG(d.text);
+    const meta=document.createElement("div");meta.className="meta";
+    meta.innerHTML=`<span class="label">${esc(d.text)}</span><span class="dl">PNG ↓</span>`;
+    meta.querySelector(".dl").onclick=()=>downloadOne(i);
+    card.appendChild(sw);card.appendChild(meta);grid.appendChild(card);
+  });
+  $("#cnt").textContent=state.designs.length;
+}
+
+$("#genBtn").onclick=()=>{
+  const lines=$("#slogans").value.split("\n").map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){toast("Add some slogans first");return;}
+  if(!state.graphic)toast("Tip: upload a graphic to pair with these");
+  state.designs=lines.map(t=>({text:t}));renderPreviews();
+  $("#zipBtn").disabled=false;
+  if(state.graphic)toast(state.designs.length+" designs generated ✦");
+  $(".panel.preview").scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+
+/* export */
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50)||"design";}
+async function svgToPNG(text){
+  await document.fonts.ready;
+  const blob=new Blob([buildSVG(text)],{type:"image/svg+xml;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});
+  const canvas=document.createElement("canvas");canvas.width=4500;canvas.height=5400;
+  canvas.getContext("2d").drawImage(img,0,0,4500,5400);URL.revokeObjectURL(url);return canvas;
+}
+async function downloadOne(i){
+  toast("Rendering print file…");
+  try{const canvas=await svgToPNG(state.designs[i].text);canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=slug(state.designs[i].text)+".png";a.click();URL.revokeObjectURL(a.href);toast("Downloaded ✦");},"image/png");}catch(e){toast("Render error");}
+}
+$("#zipBtn").onclick=async()=>{
+  if(!state.designs.length)return;const btn=$("#zipBtn");btn.disabled=true;const orig=btn.textContent;
+  const zip=new JSZip();
+  for(let i=0;i<state.designs.length;i++){btn.textContent=`Rendering ${i+1}/${state.designs.length}…`;
+    try{const canvas=await svgToPNG(state.designs[i].text);const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));zip.file(slug(state.designs[i].text)+".png",blob);}catch(e){}
+    await new Promise(r=>setTimeout(r,10));}
+  btn.textContent="Zipping…";const out=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(out);a.download="slogan-designs.zip";a.click();URL.revokeObjectURL(a.href);
+  btn.textContent=orig;btn.disabled=false;toast("ZIP downloaded ✦");
+};
+
+let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add("show");clearTimeout(tT);tT=setTimeout(()=>$("#toast").classList.remove("show"),2200);}
+</script>
+</body>
+</html>
