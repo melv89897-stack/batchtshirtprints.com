@@ -28,37 +28,22 @@ h1 .g{background:var(--brand);-webkit-background-clip:text;background-clip:text;
 .tips li b{color:var(--text)}
 .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:40px}
 .step{font-family:'Bricolage Grotesque';color:var(--violet);font-weight:700}
-.cta-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--panel);
-border:1px solid var(--line);border-radius:16px;padding:16px 22px;margin-bottom:30px;flex-wrap:wrap}
-.cta-bar p{color:var(--muted);font-size:14px}
-.cta-btn{display:inline-block;background:var(--brand);color:#0C0913;font-weight:700;text-decoration:none;
-padding:11px 22px;border-radius:100px;font-size:14px;white-space:nowrap}
-.tool-link{color:var(--violet);text-decoration:none;font-weight:600}
-.tool-link:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
   <span class="eyebrow">Quick Start Guide</span>
   <h1>Welcome to <span class="g">BATCH</span></h1>
-  <p class="lead">Three tools to make print-ready t-shirt designs in bulk, right in your browser — no software to install.</p>
-
-  <div class="cta-bar" id="ctaBar">
-    <p>Free accounts get 10 prints/month, no card needed.</p>
-    <span style="display:flex;gap:10px;flex-wrap:wrap">
-      <a class="tool-link" href="/pricing" style="align-self:center">See pricing</a>
-      <a class="cta-btn" id="ctaBtn" href="/signup">Create free account →</a>
-    </span>
-  </div>
+  <p class="lead">Three tools to make print-ready t-shirt designs in bulk. No installing, no account — just open each file in your web browser (Chrome works great) and go.</p>
 
   <div class="card">
     <span class="tag">Tool 1</span>
     <h2>Bulk Text Generator</h2>
-    <p style="color:var(--muted)">Make dozens of text designs two different ways — with a niche template, or from your own list of finished slogans.</p>
+    <p style="color:var(--muted)">Make dozens of text designs from one template.</p>
     <ol>
-      <li>Open <a class="tool-link" href="/tools/bulk-tshirt-design-studio.html">Bulk Text Generator</a>.</li>
-      <li><b>Option A — with a niche:</b> type a template using a placeholder, e.g. <code>{hobby} is my cardio</code>, then add one niche word per line in the list below (hiking, baking, running...).</li>
-      <li><b>Option B — without a niche:</b> clear the template box and just paste your own complete slogans in the list below, one per line — each line is used exactly as typed, no template needed.</li>
+      <li>Open <code>bulk-tshirt-design-studio.html</code>.</li>
+      <li>Type a template using a placeholder, e.g. <code>{hobby} is my cardio</code>.</li>
+      <li>Add your list (one item per line) in the box below.</li>
       <li>Pick a font, color, and layout in the middle panel.</li>
       <li>Hit <span class="step">Generate</span> — then download one design or the whole batch as a ZIP.</li>
     </ol>
@@ -69,7 +54,7 @@ padding:11px 22px;border-radius:100px;font-size:14px;white-space:nowrap}
     <h2>Pattern-Fill Studio</h2>
     <p style="color:var(--muted)">Fill your letters with camo, leopard, flag, and more.</p>
     <ol>
-      <li>Open <a class="tool-link" href="/tools/pattern-fill-text-studio.html">Pattern-Fill Studio</a>.</li>
+      <li>Open <code>pattern-fill-text-studio.html</code>.</li>
       <li>Pick a pattern from the library (or upload your own image).</li>
       <li>Type your slogans, one per line.</li>
       <li>Choose a heavy font, set the outline color and thickness, and arch the text if you like.</li>
@@ -82,7 +67,7 @@ padding:11px 22px;border-radius:100px;font-size:14px;white-space:nowrap}
     <h2>Slogan + Graphic Remix</h2>
     <p style="color:var(--muted)">Pair one graphic with a whole list of slogans.</p>
     <ol>
-      <li>Open <a class="tool-link" href="/tools/slogan-graphic-studio.html">Slogan + Graphic Remix</a>.</li>
+      <li>Open <code>slogan-graphic-studio.html</code>.</li>
       <li>Upload your graphic (a transparent PNG works best).</li>
       <li>Paste your slogans, one per line. Add optional sub-text if you want.</li>
       <li>Pick a layout preset and text effect (arched, circle, etc.).</li>
@@ -103,18 +88,5 @@ padding:11px 22px;border-radius:100px;font-size:14px;white-space:nowrap}
 
   <p class="foot">Made something great? You own every design you create. Happy selling. ✦</p>
 </div>
-<script>
-(function(){
-  fetch('/api/auth/me',{credentials:'include'}).then(function(r){return r.json();}).then(function(data){
-    if(data && data.user){
-      document.getElementById('ctaBar').querySelector('p').textContent =
-        (data.limits ? data.limits.name : 'Free') + ' plan — ' +
-        (data.usage ? data.usage.printsUsed : 0) + '/' + (data.limits ? data.limits.monthlyPrints : '?') + ' prints used this month.';
-      var btn=document.getElementById('ctaBtn');
-      btn.href='/dashboard';btn.textContent='Go to your dashboard →';
-    }
-  }).catch(function(){});
-})();
-</script>
 </body>
 </html>

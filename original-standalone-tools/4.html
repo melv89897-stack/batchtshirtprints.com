@@ -175,16 +175,6 @@ select.styled:focus{outline:none;border-color:var(--violet)}
 .foot{text-align:center;color:var(--muted2);font-size:12px;margin-top:50px;letter-spacing:.04em}
 
 #exportHolder{position:fixed;left:-100000px;top:0;pointer-events:none}
-
-/* modal (replaces native prompt() — blocking browser dialogs are jarring
-   and inconsistent with the rest of this UI) */
-.modal-overlay{position:fixed;inset:0;background:rgba(6,4,10,.6);display:none;align-items:center;justify-content:center;z-index:200}
-.modal-overlay.show{display:flex}
-.modal-card{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:22px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.modal-card h3{font-family:'Bricolage Grotesque';font-size:16px;margin-bottom:12px}
-.modal-card input{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:16px}
-.modal-card input:focus{outline:none;border-color:var(--violet)}
-.modal-card .row{display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -207,12 +197,12 @@ select.styled:focus{outline:none;border-color:var(--violet)}
     <section class="panel">
       <div class="phead"><span class="ix">01</span><h2>Template</h2></div>
 
-      <label class="fld">Design template (optional)</label>
-      <input type="text" id="template" class="mono" value="{hobby} is my cardio" placeholder="e.g. {hobby} is my cardio — or leave blank">
-      <div class="help">Two ways to use this: <b>with a niche</b> — use a <code>{name}</code> placeholder here and put one niche word per line below (e.g. <code>{hobby} is my cardio</code> + a list of hobbies). Or <b>without a niche</b> — clear this box and just paste your own complete slogans in the list below, one per line, used exactly as typed.</div>
+      <label class="fld">Design template</label>
+      <input type="text" id="template" class="mono" value="{hobby} is my cardio" placeholder="e.g. {hobby} is my cardio">
+      <div class="help">Use <code>{name}</code> placeholders. One placeholder → one value per line below. Multiple placeholders → paste CSV with a header row matching the names.</div>
 
       <label class="fld">Your list</label>
-      <textarea id="values" rows="7" class="mono" placeholder="One niche word per line, OR one full slogan per line if the template above is blank...">Shopping
+      <textarea id="values" rows="7" class="mono" placeholder="One per line...">Shopping
 Gaming
 Fishing
 Yoga
@@ -292,7 +282,7 @@ Gardening</textarea>
         <div class="empty-state">
           <div class="ico">✦</div>
           <h3>Nothing here yet</h3>
-          <p>Fill in the list on the left (with or without a niche template), then hit Generate to fill this board.</p>
+          <p>Set your template and list on the left, then hit Generate to fill this board.</p>
         </div>
       </div>
     </section>
@@ -304,17 +294,6 @@ Gardening</textarea>
 
 <div id="exportHolder"></div>
 <div class="toast" id="toast"><span class="b"></span><span id="toastMsg"></span></div>
-
-<div class="modal-overlay" id="saveModal">
-  <div class="modal-card">
-    <h3>Name this template</h3>
-    <input type="text" id="saveModalInput" maxlength="40" placeholder="e.g. Hobby cardio">
-    <div class="row">
-      <button class="btn ghost" id="saveModalCancel">Cancel</button>
-      <button class="btn primary" id="saveModalConfirm">Save</button>
-    </div>
-  </div>
-</div>
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -371,16 +350,12 @@ PRESETS.forEach(([t,v])=>{const c=document.createElement("div");c.className="chi
 function parse(){
   const tpl=$("#template").value.trim();
   const raw=$("#values").value.trim();
-  const ph=tpl?[...tpl.matchAll(/\{(\w+)\}/g)].map(m=>m[1]):[];
+  if(!tpl){toast("Add a template first");return null;}
+  const ph=[...tpl.matchAll(/\{(\w+)\}/g)].map(m=>m[1]);
   const lines=raw.split("\n").map(l=>l.trim()).filter(Boolean);
-  // No template (or a template with no {placeholder}) — the list below is
-  // treated as complete, ready-to-use slogans, one per line, no niche needed.
-  if(ph.length===0){
-    if(!lines.length && !tpl){toast("Add a template above, or just paste your own slogans in the list below");return null;}
-    return lines.length?lines:[tpl];
-  }
+  if(ph.length===0) return lines.length?lines:[tpl];
   if(ph.length===1){
-    if(!lines.length){toast("Add some values for {"+ph[0]+"}");return null;}
+    if(!lines.length){toast("Add some values");return null;}
     return lines.map(v=>tpl.replace(/\{\w+\}/g,v));
   }
   // multi placeholder => CSV
@@ -427,7 +402,7 @@ function esc(s){const d=document.createElement("div");d.textContent=s;return d.i
 /* ---- render preview cards ---- */
 function renderPreviews(){
   const grid=$("#grid");
-  if(!state.designs.length){grid.innerHTML=`<div class="empty-state"><div class="ico">✦</div><h3>Nothing here yet</h3><p>Fill in the list on the left (with or without a niche template), then hit Generate to fill this board.</p></div>`;return;}
+  if(!state.designs.length){grid.innerHTML=`<div class="empty-state"><div class="ico">✦</div><h3>Nothing here yet</h3><p>Set your template and list on the left, then hit Generate to fill this board.</p></div>`;return;}
   grid.innerHTML="";
   state.designs.forEach((d,i)=>{
     const card=document.createElement("div");card.className="card";
@@ -469,37 +444,24 @@ async function renderPNG(text){
 }
 async function downloadOne(i){
   toast("Rendering print file…");
-  try{
-    const canvas=await renderPNG(state.designs[i].text);
-    canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=slug(state.designs[i].text)+".png";a.click();URL.revokeObjectURL(a.href);toast("Downloaded ✦");},"image/png");
-  }catch(e){toast("Render error — try a shorter line or different font");}
+  const canvas=await renderPNG(state.designs[i].text);
+  canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=slug(state.designs[i].text)+".png";a.click();URL.revokeObjectURL(a.href);toast("Downloaded ✦");},"image/png");
 }
 $("#zipBtn").onclick=async()=>{
   if(!state.designs.length)return;
   const btn=$("#zipBtn");btn.disabled=true;const orig=btn.textContent;
-  try{
-    const zip=new JSZip();
-    let rendered=0;
-    for(let i=0;i<state.designs.length;i++){
-      btn.textContent=`Rendering ${i+1}/${state.designs.length}…`;
-      try{
-        const canvas=await renderPNG(state.designs[i].text);
-        const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
-        zip.file(slug(state.designs[i].text)+".png",blob);
-        rendered++;
-      }catch(e){/* skip this one design, keep going with the rest of the batch */}
-      await new Promise(r=>setTimeout(r,10));
-    }
-    if(rendered===0){toast("Nothing could be rendered — check your template and list");return;}
-    btn.textContent="Zipping…";
-    const out=await zip.generateAsync({type:"blob"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(out);a.download="tshirt-designs.zip";a.click();URL.revokeObjectURL(a.href);
-    toast(rendered<state.designs.length?`ZIP downloaded — ${rendered}/${state.designs.length} rendered ✦`:"ZIP downloaded ✦");
-  }catch(e){
-    toast("Something went wrong building the ZIP — please try again");
-  }finally{
-    btn.textContent=orig;btn.disabled=false;
+  const zip=new JSZip();
+  for(let i=0;i<state.designs.length;i++){
+    btn.textContent=`Rendering ${i+1}/${state.designs.length}…`;
+    const canvas=await renderPNG(state.designs[i].text);
+    const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
+    zip.file(slug(state.designs[i].text)+".png",blob);
+    await new Promise(r=>setTimeout(r,10));
   }
+  btn.textContent="Zipping…";
+  const out=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(out);a.download="tshirt-designs.zip";a.click();URL.revokeObjectURL(a.href);
+  btn.textContent=orig;btn.disabled=false;toast("ZIP downloaded ✦");
 };
 
 /* ---- saved templates (localStorage, safe) ---- */
@@ -517,33 +479,14 @@ function renderSaved(){
     wrap.appendChild(c);
   });
 }
-function openSaveModal(defaultName){
-  const modal=$("#saveModal"),input=$("#saveModalInput");
-  input.value=defaultName;modal.classList.add("show");
-  requestAnimationFrame(()=>{input.focus();input.select();});
-}
-function closeSaveModal(){$("#saveModal").classList.remove("show");}
-function confirmSave(){
-  const name=$("#saveModalInput").value.trim();
-  if(!name)return; // what-if: user clicks Save with an empty name — just don't save, don't close on invalid input
-  const tpl=$("#template").value.trim();
-  const arr=load("forge_templates")||[];
-  arr.push({name,template:tpl,values:$("#values").value,settings:{...state.settings}});
-  closeSaveModal();
-  if(store("forge_templates",arr)){renderSaved();toast("Template saved ✦");}
-  else toast("Couldn't save here — works when you run the file locally");
-}
 $("#saveBtn").onclick=()=>{
   const tpl=$("#template").value.trim();if(!tpl){toast("Nothing to save");return;}
-  openSaveModal(tpl.slice(0,24));
+  const name=prompt("Name this template:",tpl.slice(0,24));if(!name)return;
+  const arr=load("forge_templates")||[];
+  arr.push({name,template:tpl,values:$("#values").value,settings:{...state.settings}});
+  if(store("forge_templates",arr)){renderSaved();toast("Template saved ✦");}
+  else toast("Couldn't save here — works when you run the file locally");
 };
-$("#saveModalConfirm").onclick=confirmSave;
-$("#saveModalCancel").onclick=closeSaveModal;
-$("#saveModal").onclick=(e)=>{if(e.target.id==="saveModal")closeSaveModal();};
-$("#saveModalInput").addEventListener("keydown",(e)=>{
-  if(e.key==="Enter"){e.preventDefault();confirmSave();}
-  else if(e.key==="Escape"){closeSaveModal();}
-});
 function syncUI(){
   fontSel.value=state.settings.font;
   ["lineMode","align","transform"].forEach(id=>{[...$("#"+id).children].forEach(b=>b.classList.toggle("on",b.dataset.v===state.settings[id]));});
@@ -560,30 +503,6 @@ window.addEventListener("resize",()=>{if(state.designs.length)renderPreviews();}
 let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add("show");clearTimeout(tT);tT=setTimeout(()=>$("#toast").classList.remove("show"),2200);}
 
 renderSaved();
-</script>
-
-<!-- BATCH SaaS metering: gates this tool's existing export functions behind
-     the signed-in user's monthly print quota. Does not alter any rendering
-     logic above — only wraps the two export entry points. -->
-<script src="/tools/batch-credits.js"></script>
-<script>
-(function(){
-  const _origDownloadOne = downloadOne;
-  downloadOne = async function(i){
-    const ok = await BATCH.consumeCredits(1);
-    if(!ok) return;
-    return _origDownloadOne(i);
-  };
-  const zipBtnEl = document.querySelector('#zipBtn');
-  const _origZipHandler = zipBtnEl.onclick;
-  zipBtnEl.onclick = async function(e){
-    const count = state.designs.length;
-    if(count < 1) return;
-    const ok = await BATCH.consumeCredits(count);
-    if(!ok) return;
-    return _origZipHandler.call(this, e);
-  };
-})();
 </script>
 </body>
 </html>

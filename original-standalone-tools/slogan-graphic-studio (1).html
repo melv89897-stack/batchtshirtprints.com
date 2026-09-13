@@ -347,48 +347,16 @@ async function downloadOne(i){
 }
 $("#zipBtn").onclick=async()=>{
   if(!state.designs.length)return;const btn=$("#zipBtn");btn.disabled=true;const orig=btn.textContent;
-  try{
-    const zip=new JSZip();
-    let rendered=0;
-    for(let i=0;i<state.designs.length;i++){btn.textContent=`Rendering ${i+1}/${state.designs.length}…`;
-      try{const canvas=await svgToPNG(state.designs[i].text);const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));zip.file(slug(state.designs[i].text)+".png",blob);rendered++;}catch(e){}
-      await new Promise(r=>setTimeout(r,10));}
-    if(rendered===0){toast("Nothing could be rendered — check your slogans and graphic");return;}
-    btn.textContent="Zipping…";const out=await zip.generateAsync({type:"blob"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(out);a.download="slogan-designs.zip";a.click();URL.revokeObjectURL(a.href);
-    toast(rendered<state.designs.length?`ZIP downloaded — ${rendered}/${state.designs.length} rendered ✦`:"ZIP downloaded ✦");
-  }catch(e){
-    toast("Something went wrong building the ZIP — please try again");
-  }finally{
-    btn.textContent=orig;btn.disabled=false;
-  }
+  const zip=new JSZip();
+  for(let i=0;i<state.designs.length;i++){btn.textContent=`Rendering ${i+1}/${state.designs.length}…`;
+    try{const canvas=await svgToPNG(state.designs[i].text);const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));zip.file(slug(state.designs[i].text)+".png",blob);}catch(e){}
+    await new Promise(r=>setTimeout(r,10));}
+  btn.textContent="Zipping…";const out=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(out);a.download="slogan-designs.zip";a.click();URL.revokeObjectURL(a.href);
+  btn.textContent=orig;btn.disabled=false;toast("ZIP downloaded ✦");
 };
 
 let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add("show");clearTimeout(tT);tT=setTimeout(()=>$("#toast").classList.remove("show"),2200);}
-</script>
-
-<!-- BATCH SaaS metering: gates this tool's existing export functions behind
-     the signed-in user's monthly print quota. Does not alter any rendering
-     logic above — only wraps the two export entry points. -->
-<script src="/tools/batch-credits.js"></script>
-<script>
-(function(){
-  const _origDownloadOne = downloadOne;
-  downloadOne = async function(i){
-    const ok = await BATCH.consumeCredits(1);
-    if(!ok) return;
-    return _origDownloadOne(i);
-  };
-  const zipBtnEl = document.querySelector('#zipBtn');
-  const _origZipHandler = zipBtnEl.onclick;
-  zipBtnEl.onclick = async function(e){
-    const count = state.designs.length;
-    if(count < 1) return;
-    const ok = await BATCH.consumeCredits(count);
-    if(!ok) return;
-    return _origZipHandler.call(this, e);
-  };
-})();
 </script>
 </body>
 </html>
