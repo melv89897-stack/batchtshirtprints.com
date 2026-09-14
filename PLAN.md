@@ -1,7 +1,7 @@
-# BATCH App — Accounts, Database & Stripe Payments — PLAN
+# BulkBatch App — Accounts, Database & Stripe Payments — PLAN
 
 ## What this app is
-BATCH is three existing, already-working, client-side-only design tools (bulk text
+BulkBatch is three existing, already-working, client-side-only design tools (bulk text
 generator, pattern-fill studio, slogan+graphic remix — previously sold standalone on
 Gumroad with no account system) being turned into a hosted, metered SaaS product.
 Free users get 10 prints; paid tiers unlock more. All actual design rendering stays
@@ -100,7 +100,7 @@ trusted from the client or from the Checkout redirect.
 
 ## Build order
 1. `server/db.js` (schema + prepared statements + PLAN_LIMITS + reserveUsage)
-2. `server/email.js` (verbatim pattern from InkStorm, BATCH-branded copy)
+2. `server/email.js` (verbatim pattern from InkStorm, BulkBatch-branded copy)
 3. `server/auth.js` (verbatim pattern, `requireAuth` + new `requireAuthPage`)
 4. `server/stripe-routes.js` (checkout/portal/webhook, event-id idempotency added)
 5. `server/scripts/setup-stripe-products.js`

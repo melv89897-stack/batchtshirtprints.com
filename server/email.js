@@ -16,7 +16,7 @@ function createTransport() {
   return null;
 }
 
-const FROM = process.env.EMAIL_FROM || 'BATCH <noreply@batch.app>';
+const FROM = process.env.EMAIL_FROM || 'BulkBatch <noreply@batch.app>';
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
 async function send({ to, subject, html, text }) {
@@ -35,11 +35,11 @@ async function send({ to, subject, html, text }) {
 export async function sendVerificationEmail(email, code) {
   await send({
     to: email,
-    subject: 'Verify your BATCH account',
-    text: `Your BATCH verification code is: ${code}\n\nThis code expires in 10 minutes.`,
+    subject: 'Verify your BulkBatch account',
+    text: `Your BulkBatch verification code is: ${code}\n\nThis code expires in 10 minutes.`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px">
-        <h2 style="color:#B14DFF">BATCH</h2>
+        <h2 style="color:#B14DFF">BulkBatch</h2>
         <p>Welcome! Enter this code to verify your email:</p>
         <div style="font-size:36px;font-weight:bold;letter-spacing:8px;text-align:center;
                     background:#f4f0ff;border-radius:8px;padding:20px;margin:24px 0">
@@ -54,11 +54,11 @@ export async function sendPasswordResetEmail(email, token) {
   const link = `${APP_URL}/reset-password?token=${token}`;
   await send({
     to: email,
-    subject: 'Reset your BATCH password',
+    subject: 'Reset your BulkBatch password',
     text: `Reset your password: ${link}\n\nThis link expires in 1 hour.`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px">
-        <h2 style="color:#B14DFF">BATCH</h2>
+        <h2 style="color:#B14DFF">BulkBatch</h2>
         <p>Click below to reset your password:</p>
         <a href="${link}"
            style="display:inline-block;background:#B14DFF;color:#fff;padding:14px 28px;

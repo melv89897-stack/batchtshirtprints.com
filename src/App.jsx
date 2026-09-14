@@ -80,7 +80,7 @@ export default function App() {
 
   const Nav = () => (
     <header className="nav">
-      <a href="/" className="brand" onClick={(e) => { e.preventDefault(); navigate('/'); }}>BATCH</a>
+      <a href="/" className="brand" onClick={(e) => { e.preventDefault(); navigate('/'); }}>BulkBatch</a>
       <nav>
         <a onClick={(e) => { e.preventDefault(); navigate('/pricing'); }} href="/pricing">Pricing</a>
         {session.user ? (
@@ -127,7 +127,7 @@ export default function App() {
     <div className="app">
       <Nav />
       <main>{view}</main>
-      <footer className="foot">BATCH &middot; every export is a transparent 4500&times;5400 PNG, print-ready for Printify, Printful &amp; Etsy.</footer>
+      <footer className="foot">BulkBatch &middot; every export is a transparent 4500&times;5400 PNG, print-ready for Printify, Printful &amp; Etsy.</footer>
     </div>
   );
 }

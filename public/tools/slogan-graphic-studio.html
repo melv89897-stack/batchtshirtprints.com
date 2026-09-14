@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BATCH Remix — Slogan + Graphic Generator</title>
+<title>BulkBatch Remix — Slogan + Graphic Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;600;700&family=Bebas+Neue&family=Anton&family=Archivo+Black&family=Oswald:wght@600;700&family=Playfair+Display:wght@700;900&family=Abril+Fatface&family=DM+Serif+Display&family=Bungee&family=Space+Grotesk:wght@700&family=Permanent+Marker&family=Caveat:wght@700&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
@@ -199,7 +199,7 @@ Small town girl, big city dreams</textarea>
       </div>
     </section>
   </main>
-  <div class="foot">BATCH Remix — exports transparent 4500×5400 PNGs, print-ready for Printify, Printful & Etsy.</div>
+  <div class="foot">BulkBatch Remix — exports transparent 4500×5400 PNGs, print-ready for Printify, Printful & Etsy.</div>
 </div>
 <div class="toast" id="toast"><span class="b"></span><span id="toastMsg"></span></div>
 
@@ -367,7 +367,7 @@ $("#zipBtn").onclick=async()=>{
 let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add("show");clearTimeout(tT);tT=setTimeout(()=>$("#toast").classList.remove("show"),2200);}
 </script>
 
-<!-- BATCH SaaS metering: gates this tool's existing export functions behind
+<!-- BulkBatch SaaS metering: gates this tool's existing export functions behind
      the signed-in user's monthly print quota. Does not alter any rendering
      logic above — only wraps the two export entry points. -->
 <script src="/tools/batch-credits.js"></script>
@@ -375,7 +375,7 @@ let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add(
 (function(){
   const _origDownloadOne = downloadOne;
   downloadOne = async function(i){
-    const ok = await BATCH.consumeCredits(1);
+    const ok = await BulkBatch.consumeCredits(1);
     if(!ok) return;
     return _origDownloadOne(i);
   };
@@ -384,7 +384,7 @@ let tT;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add(
   zipBtnEl.onclick = async function(e){
     const count = state.designs.length;
     if(count < 1) return;
-    const ok = await BATCH.consumeCredits(count);
+    const ok = await BulkBatch.consumeCredits(count);
     if(!ok) return;
     return _origZipHandler.call(this, e);
   };

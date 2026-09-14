@@ -1,5 +1,5 @@
-// One-time (idempotent) setup: creates the BATCH Starter ($4.99/mo) and
-// BATCH Pro ($9.99/mo) Stripe Products+Prices if they don't already exist
+// One-time (idempotent) setup: creates the BulkBatch Starter ($4.99/mo) and
+// BulkBatch Pro ($9.99/mo) Stripe Products+Prices if they don't already exist
 // (matched by metadata.app === 'batch' AND metadata.plan, so re-running
 // never duplicates them), then prints the price IDs to add to .env. If a
 // product already exists at an old price (Stripe prices are immutable once
@@ -9,7 +9,7 @@
 // The metadata.app tag matters: this Stripe account is shared with a
 // sibling app (InkStorm) that independently tags its own products with
 // metadata.plan values — matching on plan alone once caused this script to
-// silently adopt InkStorm's leftover "Starter" product as BATCH's "pro"
+// silently adopt InkStorm's leftover "Starter" product as BulkBatch's "pro"
 // plan (correct price, wrong product name/branding at checkout).
 //
 // Usage: npm run setup:stripe
@@ -25,8 +25,8 @@ if (!SECRET_KEY) {
 const stripe = new Stripe(SECRET_KEY);
 
 const PLAN_META = {
-  starter: { name: 'BATCH Starter', price: 499, description: '100 prints per month' },
-  pro:     { name: 'BATCH Pro',     price: 999, description: '1000 prints per month' },
+  starter: { name: 'BulkBatch Starter', price: 499, description: '100 prints per month' },
+  pro:     { name: 'BulkBatch Pro',     price: 999, description: '1000 prints per month' },
 };
 
 async function main() {

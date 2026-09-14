@@ -17,8 +17,8 @@ const FRONTEND = process.env.CORS_ORIGIN || 'http://localhost:5173';
 // Price IDs — set via .env after running `npm run setup:stripe`, or resolved
 // at runtime by ensureProducts() below (which also auto-creates them once).
 const PLAN_META = {
-  starter: { name: 'BATCH Starter', price: 499, description: '100 prints per month' },
-  pro:     { name: 'BATCH Pro',     price: 999, description: '1000 prints per month' },
+  starter: { name: 'BulkBatch Starter', price: 499, description: '100 prints per month' },
+  pro:     { name: 'BulkBatch Pro',     price: 999, description: '1000 prints per month' },
 };
 
 const priceIds = {
@@ -30,13 +30,13 @@ async function ensureProducts() {
   if (!stripe) return;
 
   try {
-    // Look for existing BATCH products first to avoid creating duplicates.
+    // Look for existing BulkBatch products first to avoid creating duplicates.
     // Matched on metadata.app === 'batch' AND metadata.plan === key — NOT on
     // plan alone. This Stripe account is shared with a sibling app
     // (InkStorm), which independently tags its own products with
     // metadata.plan values like 'pro'/'starter' — matching on plan alone
     // once caused this code to silently adopt InkStorm's leftover "Starter"
-    // product as BATCH's "pro" plan (right price, wrong product name/branding
+    // product as BulkBatch's "pro" plan (right price, wrong product name/branding
     // shown at checkout). The app-scoped tag prevents that cross-app collision.
     const products = await stripe.products.list({ limit: 50, active: true });
     const productByPlan = {};

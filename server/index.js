@@ -95,7 +95,7 @@ function sanitizeInput(str) {
   return str.replace(/[<>{}]/g, '').replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, 500);
 }
 
-// The three BATCH tools render entirely client-side (canvas/SVG, no server AI
+// The three BulkBatch tools render entirely client-side (canvas/SVG, no server AI
 // call) — this is the single checkpoint that meters every export ("print")
 // against the user's plan before the browser is allowed to proceed with its
 // already-rendered download. A "print" = one PNG; a ZIP batch of N designs
@@ -181,6 +181,6 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n  BATCH server running on http://localhost:${PORT}`);
+  console.log(`\n  BulkBatch server running on http://localhost:${PORT}`);
   console.log(`  Stripe: ${process.env.STRIPE_SECRET_KEY ? 'connected' : 'NOT SET'}\n`);
 });

@@ -1,10 +1,10 @@
-// Shared credit metering client for the three BATCH generator tools.
+// Shared credit metering client for the three BulkBatch generator tools.
 // Loaded by each tool's HTML after its own script — see the small inline
 // wiring block appended near the end of each tool file, which wraps that
 // tool's existing downloadOne()/#zipBtn export functions with a call into
-// BATCH.consumeCredits() before letting the (untouched) original export run.
+// BulkBatch.consumeCredits() before letting the (untouched) original export run.
 (function () {
-  const BATCH = (window.BATCH = window.BATCH || {});
+  const BulkBatch = (window.BulkBatch = window.BulkBatch || {});
 
   async function fetchMe() {
     try {
@@ -35,7 +35,7 @@
       '<a href="/dashboard" style="color:#B14DFF;text-decoration:none;font-weight:600">Manage</a>';
   }
 
-  BATCH.init = async function () {
+  BulkBatch.init = async function () {
     const data = await fetchMe();
     if (!data.user) {
       window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
@@ -47,7 +47,7 @@
   // Returns true if the export may proceed, false if it was blocked (limit
   // reached, not logged in, or a network error) — caller must not proceed
   // with the already-rendered download/ZIP when this returns false.
-  BATCH.consumeCredits = async function (count) {
+  BulkBatch.consumeCredits = async function (count) {
     if (!Number.isFinite(count) || count < 1) return false;
     try {
       const res = await fetch('/api/usage/consume', {
@@ -76,5 +76,5 @@
     }
   };
 
-  document.addEventListener('DOMContentLoaded', BATCH.init);
+  document.addEventListener('DOMContentLoaded', BulkBatch.init);
 })();

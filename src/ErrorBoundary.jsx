@@ -16,7 +16,7 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('BATCH crashed:', error, info?.componentStack);
+    console.error('BulkBatch crashed:', error, info?.componentStack);
   }
 
   render() {
@@ -29,7 +29,7 @@ export class ErrorBoundary extends React.Component {
         }}>
           <h1 style={{ marginBottom: '12px' }}>Something went wrong</h1>
           <p style={{ color: '#B0A4CC', marginBottom: '24px', maxWidth: '440px' }}>
-            BATCH hit an unexpected error. Your account and data are safe — try reloading the page.
+            BulkBatch hit an unexpected error. Your account and data are safe — try reloading the page.
           </p>
           <button
             onClick={() => { this.setState({ hasError: false }); window.location.href = '/'; }}
@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component {
               padding: '12px 28px', fontSize: '14px', cursor: 'pointer',
             }}
           >
-            Reload BATCH
+            Reload BulkBatch
           </button>
         </div>
       );

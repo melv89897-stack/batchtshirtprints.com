@@ -56,7 +56,7 @@ function waitForServer(proc, timeoutMs = 15000) {
     proc.stdout.on('data', (d) => {
       buf += d.toString();
       process.stdout.write(`  [server] ${d}`);
-      if (buf.includes('BATCH server running')) {
+      if (buf.includes('BulkBatch server running')) {
         clearTimeout(timer);
         resolve();
       }
@@ -82,7 +82,7 @@ async function main() {
     BATCH_TEST_DB_PATH: TEST_DB,
   };
 
-  console.log(`\n=== Starting BATCH server on :${TEST_PORT} against a throwaway test DB ===\n`);
+  console.log(`\n=== Starting BulkBatch server on :${TEST_PORT} against a throwaway test DB ===\n`);
   const proc = spawn('node', ['server/index.js'], { cwd: ROOT, env });
   await waitForServer(proc);
   console.log('\n=== Server up. Running tests ===\n');
