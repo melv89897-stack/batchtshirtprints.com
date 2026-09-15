@@ -9,3 +9,5 @@ dist
 prisma/dev.db
 prisma/dev.db-journal
 storage/private
+next-env.d.ts
+*.tsbuildinfo

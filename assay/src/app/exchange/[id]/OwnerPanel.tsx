@@ -10,7 +10,8 @@ import { readActionError, type ActionError } from "./twoFactor";
 
 type Props = {
   listingId: string;
-  status: "DRAFT" | "PENDING_VERIFICATION" | "LIVE" | "IN_ESCROW" | "SOLD" | "WITHDRAWN";
+  // "DRAFT" | "PENDING_VERIFICATION" | "LIVE" | "IN_ESCROW" | "SOLD" | "WITHDRAWN"
+  status: string;
   endsAt: string | null;
   hasBids: boolean;
   stripeVerified: boolean;

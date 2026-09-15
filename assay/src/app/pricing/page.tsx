@@ -13,7 +13,10 @@ import {
 import { getCurrentUser } from "@/lib/security/auth";
 import { Chip } from "@/components/ui/Chip";
 import { wrap } from "@/components/ui/Section";
-import type { MembershipTier } from "@prisma/client";
+
+// Stored as a plain string column (see prisma/schema.prisma) rather than a
+// Prisma enum — SQLite has no native enum type.
+type MembershipTier = "FREE" | "PRO" | "INSIDER";
 
 type TierKind = "ghost" | "primary" | "gold";
 
@@ -103,7 +106,7 @@ const FEE_EXAMPLES: [string, string][] = [
   ["Sells for $1,000,000", "$100,000"],
 ];
 
-const TIER_LABELS: Record<MembershipTier, string> = {
+const TIER_LABELS: Record<string, string> = {
   FREE: "Free",
   PRO: "Pro",
   INSIDER: "Insider",

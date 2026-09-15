@@ -2,13 +2,17 @@
 //  ASSAY — Database Schema
 //  The verified exchange for SaaS companies.
 //
-//  Adapted from the provided starter schema. Two deviations, both because
-//  no Postgres/Clerk/Redis/S3 service is provisioned in this environment
-//  (the same reasoning the sibling `batchtshirtprints.com` project used):
+//  Adapted from the provided starter schema. Deviations, and why:
 //    1. provider is "sqlite" instead of "postgresql" — a single file, zero
-//       services to stand up. Swapping back to Postgres for production is a
-//       two-line change (provider + DATABASE_URL) since nothing else here
-//       depends on a Postgres-only feature.
+//       services to stand up, matching the same reasoning the sibling
+//       `batchtshirtprints.com` project used (no Postgres server in this
+//       environment). Swapping back to Postgres for production means
+//       changing the provider/URL here AND converting the string-enum
+//       fields below back to real `enum` blocks (SQLite has no native enum
+//       type, so Prisma enums aren't usable on this connector) — everything
+//       else is unaffected since every value is still validated by Zod at
+//       the API boundary (src/lib/security/validate.ts) before it reaches
+//       the database.
 //    2. Auth stores passwordHash/totpSecret directly instead of a bare
 //       clerkId, because no Clerk account is configured. Passwords are
 //       bcrypt-hashed (see src/lib/security/auth.ts) — never stored plain.
@@ -32,11 +36,11 @@ datasource db {
 // ---------- Users & verification ----------
 
 model User {
-  id           String @id @default(cuid())
-  email        String @unique
+  id           String  @id @default(cuid())
+  email        String  @unique
   passwordHash String
   displayName  String?
-  role         Role   @default(MEMBER) // MEMBER can buy AND sell; ADMIN for platform ops
+  role         String  @default("MEMBER") // "MEMBER" | "ADMIN" — MEMBER can buy AND sell
 
   // Session invalidation: bump to invalidate every existing JWT (password change, etc.)
   tokenVersion Int @default(0)
@@ -45,49 +49,32 @@ model User {
   twoFactorEnabled Boolean @default(false)
   totpSecret       String?
 
-  // Verification state — the actual proof lives with the providers, we store the result
-  kycStatus          VerificationStatus @default(UNVERIFIED)
-  proofOfFundsStatus VerificationStatus @default(UNVERIFIED)
+  // Verification state — the actual proof lives with the providers, we store the result.
+  // "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED"
+  kycStatus          String @default("UNVERIFIED")
+  proofOfFundsStatus String @default("UNVERIFIED")
 
   // Stripe Connect account — for receiving payouts and placing card holds
   stripeAccountId String?
 
-  // Membership (pricing page)
-  membershipTier MembershipTier @default(FREE)
+  // Membership (pricing page). "FREE" | "PRO" | "INSIDER"
+  membershipTier String    @default("FREE")
   trialEndsAt    DateTime?
 
-  // Reputation — compounds from completed deals (dealsAsX below)
+  // Reputation — compounds from completed deals
   reputationScore Int @default(0)
 
-  listings     Listing[]       @relation("SellerListings")
-  bids         Bid[]
-  ndas         Nda[]
-  watchlist    WatchlistItem[]
-  buyerDeals   EscrowDeal[]    @relation("BuyerDeals")
-  sellerDeals  EscrowDeal[]    @relation("SellerDeals")
-  messages     DealMessage[]
-  disputesRaised Dispute[]     @relation("DisputeRaisedBy")
+  listings       Listing[]       @relation("SellerListings")
+  bids           Bid[]
+  ndas           Nda[]
+  watchlist      WatchlistItem[]
+  buyerDeals     EscrowDeal[]    @relation("BuyerDeals")
+  sellerDeals    EscrowDeal[]    @relation("SellerDeals")
+  messages       DealMessage[]
+  disputesRaised Dispute[]       @relation("DisputeRaisedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-enum Role {
-  MEMBER
-  ADMIN
-}
-
-enum VerificationStatus {
-  UNVERIFIED
-  PENDING
-  VERIFIED
-  REJECTED
-}
-
-enum MembershipTier {
-  FREE
-  PRO
-  INSIDER
 }
 
 // ---------- Listings ----------
@@ -103,8 +90,10 @@ model Listing {
   category String
   summary  String?
 
-  status  ListingStatus @default(DRAFT)
-  askType AskType       @default(AUCTION)
+  // "DRAFT" | "PENDING_VERIFICATION" | "LIVE" | "IN_ESCROW" | "SOLD" | "WITHDRAWN"
+  status String @default("DRAFT")
+  // "AUCTION" | "BUY_NOW"
+  askType String @default("AUCTION")
 
   // Pricing (money as integer cents to avoid float errors)
   reservePriceCents Int?
@@ -141,20 +130,6 @@ model Listing {
 
   @@index([status])
   @@index([endsAt])
-}
-
-enum ListingStatus {
-  DRAFT
-  PENDING_VERIFICATION
-  LIVE
-  IN_ESCROW
-  SOLD
-  WITHDRAWN
-}
-
-enum AskType {
-  AUCTION
-  BUY_NOW
 }
 
 // ---------- Bids ----------
@@ -218,23 +193,17 @@ model DealMessage {
 // after redaction. No public URLs — access is granted per-request, time-limited.
 
 model Document {
-  id        String       @id @default(cuid())
-  listing   Listing      @relation(fields: [listingId], references: [id])
+  id        String @id @default(cuid())
+  listing   Listing @relation(fields: [listingId], references: [id])
   listingId String
-  type      DocumentType
+  // "BANK_STATEMENT" | "PROFIT_LOSS" | "CONTRACT" | "OTHER"
+  type String
 
   storageKey String // key in private storage (see storage.ts)
   sha256     String // hash for tamper detection
   redacted   Boolean @default(true)
 
   createdAt DateTime @default(now())
-}
-
-enum DocumentType {
-  BANK_STATEMENT
-  PROFIT_LOSS
-  CONTRACT
-  OTHER
 }
 
 // ---------- Escrow & handover ----------
@@ -255,7 +224,8 @@ model EscrowDeal {
   amountCents           Int
   platformFeeCents      Int
   stripePaymentIntentId String?
-  status                EscrowStatus @default(FUNDS_PENDING)
+  // "FUNDS_PENDING" | "FUNDS_SECURED" | "TRANSFERRING" | "INSPECTION" | "RELEASED" | "DISPUTED" | "REFUNDED"
+  status String @default("FUNDS_PENDING")
 
   inspectionEndsAt DateTime?
   fundsReleasedAt  DateTime?
@@ -265,16 +235,6 @@ model EscrowDeal {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-enum EscrowStatus {
-  FUNDS_PENDING // waiting for buyer funds to clear
-  FUNDS_SECURED // money held in escrow
-  TRANSFERRING // assets being handed over
-  INSPECTION // 7-day buyer inspection window
-  RELEASED // funds paid to seller
-  DISPUTED
-  REFUNDED
 }
 
 model HandoverItem {
@@ -294,36 +254,26 @@ model HandoverItem {
 // recorded on both parties' reputation.
 
 model Dispute {
-  id      String     @id @default(cuid())
-  deal    EscrowDeal @relation(fields: [dealId], references: [id])
-  dealId  String
-  raiser  User       @relation("DisputeRaisedBy", fields: [raiserId], references: [id])
+  id       String     @id @default(cuid())
+  deal     EscrowDeal @relation(fields: [dealId], references: [id])
+  dealId   String
+  raiser   User       @relation("DisputeRaisedBy", fields: [raiserId], references: [id])
   raiserId String
 
   reason         String
   sellerResponse String?
-  status         DisputeStatus @default(OPEN)
-  resolution     DisputeResolution?
+  // "OPEN" | "SELLER_RESPONDED" | "RESOLVED"
+  status String @default("OPEN")
+  // "REFUND_BUYER" | "RELEASE_SELLER" | "SPLIT" | null
+  resolution     String?
   resolutionNote String?
   resolvedById   String?
 
-  createdAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
   respondedAt DateTime?
-  resolvedAt DateTime?
+  resolvedAt  DateTime?
 
   @@index([dealId])
-}
-
-enum DisputeStatus {
-  OPEN
-  SELLER_RESPONDED
-  RESOLVED
-}
-
-enum DisputeResolution {
-  REFUND_BUYER
-  RELEASE_SELLER
-  SPLIT
 }
 
 // ---------- Watchlist ----------
@@ -345,12 +295,12 @@ model WatchlistItem {
 // Never updated or deleted — write-only history.
 
 model AuditLog {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   actorId    String? // user who did it (null = system)
   action     String // e.g. "bid.placed", "document.viewed", "escrow.released"
   targetType String? // e.g. "Listing", "EscrowDeal"
   targetId   String?
-  metadata   Json?
+  metadata   String? // JSON-stringified — SQLite has no native Json column type
   ipAddress  String?
 
   createdAt DateTime @default(now())

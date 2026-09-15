@@ -11,7 +11,7 @@ import { ConfirmHandoverButton } from "./ConfirmHandoverButton";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_TONE = {
+const STATUS_TONE: Record<string, "neutral" | "gold" | "trust" | "live" | "ink" | "dark"> = {
   FUNDS_PENDING: "neutral",
   FUNDS_SECURED: "gold",
   TRANSFERRING: "gold",

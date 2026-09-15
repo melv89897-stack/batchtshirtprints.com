@@ -171,7 +171,6 @@ async function main() {
       { listingId: halcyon.id, signerId: buyer.id },
       { listingId: halcyon.id, signerId: buyerTwo.id },
     ],
-    skipDuplicates: true,
   });
   await db.bid.createMany({
     data: [
@@ -184,7 +183,6 @@ async function main() {
       { userId: buyer.id, listingId: northwind.id },
       { userId: buyer.id, listingId: ledger.id },
     ],
-    skipDuplicates: true,
   });
   await db.dealMessage.create({
     data: {

@@ -5,11 +5,13 @@ import { ChevronDown, ChevronUp, FileText, ShieldCheck } from "lucide-react";
 
 type Doc = {
   id: string;
-  type: "BANK_STATEMENT" | "PROFIT_LOSS" | "CONTRACT" | "OTHER";
+  // "BANK_STATEMENT" | "PROFIT_LOSS" | "CONTRACT" | "OTHER" (stored as a plain
+  // string column — see prisma/schema.prisma for why)
+  type: string;
   createdAt: string;
 };
 
-const TYPE_LABEL: Record<Doc["type"], string> = {
+const TYPE_LABEL: Record<string, string> = {
   BANK_STATEMENT: "Redacted bank statement",
   PROFIT_LOSS: "Profit & loss statement",
   CONTRACT: "Contract",

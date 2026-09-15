@@ -12,6 +12,14 @@ statements.
 This app was scaffolded from a design/product package (prototypes + a
 starter security architecture) into a real, working codebase.
 
+`npm run build` passes (typecheck + production build, all 44 routes) and the
+core flows have been exercised end to end against the seeded data: signup/
+login/logout/2FA, the sealed public feed showing only `LIVE` listings,
+NDA-gated unlock, bidding (including the 2FA gate and anti-snipe), buyer/
+seller/admin dashboards, the deal room, and dispute raise/resolve — all
+correctly enforcing the 2FA and NDA gates when the seeded demo accounts
+don't have them set up yet.
+
 ## Stack
 
 - **Next.js 14 (App Router) + TypeScript + Tailwind**

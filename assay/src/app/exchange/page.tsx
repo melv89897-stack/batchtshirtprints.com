@@ -137,7 +137,7 @@ type ListingRow = {
   id: string;
   codename: string;
   category: string;
-  askType: "AUCTION" | "BUY_NOW";
+  askType: string; // "AUCTION" | "BUY_NOW"
   reservePriceCents: number | null;
   buyNowPriceCents: number | null;
   currentBidCents: number;

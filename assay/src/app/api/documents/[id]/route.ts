@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
     const { bytes, contentType } = await readDocumentForViewer(user, params.id, ip);
 
-    return new NextResponse(bytes, {
+    return new NextResponse(new Uint8Array(bytes), {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "private, no-store",
