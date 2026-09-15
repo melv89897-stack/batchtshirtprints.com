@@ -1,0 +1,360 @@
+// ============================================================
+//  ASSAY — Database Schema
+//  The verified exchange for SaaS companies.
+//
+//  Adapted from the provided starter schema. Two deviations, both because
+//  no Postgres/Clerk/Redis/S3 service is provisioned in this environment
+//  (the same reasoning the sibling `batchtshirtprints.com` project used):
+//    1. provider is "sqlite" instead of "postgresql" — a single file, zero
+//       services to stand up. Swapping back to Postgres for production is a
+//       two-line change (provider + DATABASE_URL) since nothing else here
+//       depends on a Postgres-only feature.
+//    2. Auth stores passwordHash/totpSecret directly instead of a bare
+//       clerkId, because no Clerk account is configured. Passwords are
+//       bcrypt-hashed (see src/lib/security/auth.ts) — never stored plain.
+//
+//  Security properties preserved from the original:
+//   • No card or bank numbers stored — Stripe/escrow holds all money.
+//   • Sensitive docs stored as encrypted-at-rest references, never raw.
+//   • Every money/document/permission change is written to AuditLog.
+//   • Money is stored in integer cents, never floats.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Users & verification ----------
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  displayName  String?
+  role         Role   @default(MEMBER) // MEMBER can buy AND sell; ADMIN for platform ops
+
+  // Session invalidation: bump to invalidate every existing JWT (password change, etc.)
+  tokenVersion Int @default(0)
+
+  // 2FA (TOTP) — required to bid, list, or move money. No SMS, no third party.
+  twoFactorEnabled Boolean @default(false)
+  totpSecret       String?
+
+  // Verification state — the actual proof lives with the providers, we store the result
+  kycStatus          VerificationStatus @default(UNVERIFIED)
+  proofOfFundsStatus VerificationStatus @default(UNVERIFIED)
+
+  // Stripe Connect account — for receiving payouts and placing card holds
+  stripeAccountId String?
+
+  // Membership (pricing page)
+  membershipTier MembershipTier @default(FREE)
+  trialEndsAt    DateTime?
+
+  // Reputation — compounds from completed deals (dealsAsX below)
+  reputationScore Int @default(0)
+
+  listings     Listing[]       @relation("SellerListings")
+  bids         Bid[]
+  ndas         Nda[]
+  watchlist    WatchlistItem[]
+  buyerDeals   EscrowDeal[]    @relation("BuyerDeals")
+  sellerDeals  EscrowDeal[]    @relation("SellerDeals")
+  messages     DealMessage[]
+  disputesRaised Dispute[]     @relation("DisputeRaisedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum MembershipTier {
+  FREE
+  PRO
+  INSIDER
+}
+
+// ---------- Listings ----------
+
+model Listing {
+  id       String @id @default(cuid())
+  seller   User   @relation("SellerListings", fields: [sellerId], references: [id])
+  sellerId String
+
+  codename String // public, e.g. "Project Halcyon"
+  realName String? // revealed only after NDA is signed
+  domain   String? // revealed only after NDA is signed
+  category String
+  summary  String?
+
+  status  ListingStatus @default(DRAFT)
+  askType AskType       @default(AUCTION)
+
+  // Pricing (money as integer cents to avoid float errors)
+  reservePriceCents Int?
+  buyNowPriceCents  Int?
+  currentBidCents   Int @default(0)
+  bidIncrementCents Int @default(2500000) // $25,000
+
+  // Auction timing
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  // Verified metrics (synced from Stripe / GA — refreshed by a job, not user-entered)
+  mrrCents    Int?
+  growthMoM   Float?
+  grossMargin Float?
+  netChurn    Float?
+  arrMultiple Float?
+
+  // Hallmark checks — each must be true before the listing earns the seal
+  stripeVerified    Boolean @default(false)
+  analyticsVerified Boolean @default(false)
+  statementRedacted Boolean @default(false)
+  depositsMatched   Boolean @default(false)
+
+  bids       Bid[]
+  ndas       Nda[]
+  documents  Document[]
+  watchers   WatchlistItem[]
+  messages   DealMessage[]
+  escrowDeal EscrowDeal?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([endsAt])
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  LIVE
+  IN_ESCROW
+  SOLD
+  WITHDRAWN
+}
+
+enum AskType {
+  AUCTION
+  BUY_NOW
+}
+
+// ---------- Bids ----------
+// A bid is only allowed if the bidder passed KYC + proof of funds + card hold.
+// That is enforced in SERVER code before a row is written here — never trust the client.
+
+model Bid {
+  id        String  @id @default(cuid())
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String
+  bidder    User    @relation(fields: [bidderId], references: [id])
+  bidderId  String
+
+  amountCents Int
+  isProxyMax  Boolean @default(false) // true if this is a max/auto-bid ceiling
+
+  // Reference to the refundable card-hold authorization backing this bid (stubbed — see escrow.ts)
+  cardHoldRef String?
+
+  createdAt DateTime @default(now())
+
+  @@index([listingId, amountCents])
+}
+
+// ---------- NDA gating ----------
+// Signing unlocks realName, domain, and the document data room for one listing.
+
+model Nda {
+  id        String  @id @default(cuid())
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String
+  signer    User    @relation(fields: [signerId], references: [id])
+  signerId  String
+
+  signedAt  DateTime @default(now())
+  ipAddress String? // for the signed-agreement record
+
+  @@unique([listingId, signerId])
+}
+
+// ---------- Private data-room Q&A ----------
+// Buyers ask sellers confidentially before bidding. Only the seller, the
+// asking buyer, and admins can read a thread — enforced server-side.
+
+model DealMessage {
+  id        String  @id @default(cuid())
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String
+  sender    User    @relation(fields: [senderId], references: [id])
+  senderId  String
+
+  body String
+
+  createdAt DateTime @default(now())
+
+  @@index([listingId])
+}
+
+// ---------- Sensitive documents (redacted statements) ----------
+// We store ONLY the redacted, encrypted file reference. Originals are deleted
+// after redaction. No public URLs — access is granted per-request, time-limited.
+
+model Document {
+  id        String       @id @default(cuid())
+  listing   Listing      @relation(fields: [listingId], references: [id])
+  listingId String
+  type      DocumentType
+
+  storageKey String // key in private storage (see storage.ts)
+  sha256     String // hash for tamper detection
+  redacted   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+enum DocumentType {
+  BANK_STATEMENT
+  PROFIT_LOSS
+  CONTRACT
+  OTHER
+}
+
+// ---------- Escrow & handover ----------
+// Funds move buyer -> escrow -> seller. We store only references and status.
+// Release happens in server code ONLY when handover is confirmed AND the
+// inspection window has closed AND no dispute is open.
+
+model EscrowDeal {
+  id        String  @id @default(cuid())
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String  @unique
+
+  buyer    User   @relation("BuyerDeals", fields: [buyerId], references: [id])
+  buyerId  String
+  seller   User   @relation("SellerDeals", fields: [sellerId], references: [id])
+  sellerId String
+
+  amountCents           Int
+  platformFeeCents      Int
+  stripePaymentIntentId String?
+  status                EscrowStatus @default(FUNDS_PENDING)
+
+  inspectionEndsAt DateTime?
+  fundsReleasedAt  DateTime?
+
+  handoverItems HandoverItem[]
+  disputes      Dispute[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum EscrowStatus {
+  FUNDS_PENDING // waiting for buyer funds to clear
+  FUNDS_SECURED // money held in escrow
+  TRANSFERRING // assets being handed over
+  INSPECTION // 7-day buyer inspection window
+  RELEASED // funds paid to seller
+  DISPUTED
+  REFUNDED
+}
+
+model HandoverItem {
+  id     String     @id @default(cuid())
+  deal   EscrowDeal @relation(fields: [dealId], references: [id])
+  dealId String
+
+  label       String // "GitHub repositories", "Stripe account", etc.
+  description String?
+  done        Boolean   @default(false)
+  confirmedAt DateTime?
+}
+
+// ---------- Disputes ----------
+// Buyer raises a dispute during inspection -> funds freeze (deal.status = DISPUTED)
+// -> seller responds -> a neutral Assay reviewer (admin) decides. Outcome is
+// recorded on both parties' reputation.
+
+model Dispute {
+  id      String     @id @default(cuid())
+  deal    EscrowDeal @relation(fields: [dealId], references: [id])
+  dealId  String
+  raiser  User       @relation("DisputeRaisedBy", fields: [raiserId], references: [id])
+  raiserId String
+
+  reason         String
+  sellerResponse String?
+  status         DisputeStatus @default(OPEN)
+  resolution     DisputeResolution?
+  resolutionNote String?
+  resolvedById   String?
+
+  createdAt  DateTime  @default(now())
+  respondedAt DateTime?
+  resolvedAt DateTime?
+
+  @@index([dealId])
+}
+
+enum DisputeStatus {
+  OPEN
+  SELLER_RESPONDED
+  RESOLVED
+}
+
+enum DisputeResolution {
+  REFUND_BUYER
+  RELEASE_SELLER
+  SPLIT
+}
+
+// ---------- Watchlist ----------
+
+model WatchlistItem {
+  id        String  @id @default(cuid())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+// ---------- Audit log (append-only) ----------
+// Every money movement, document access, and permission change is recorded.
+// Never updated or deleted — write-only history.
+
+model AuditLog {
+  id         String @id @default(cuid())
+  actorId    String? // user who did it (null = system)
+  action     String // e.g. "bid.placed", "document.viewed", "escrow.released"
+  targetType String? // e.g. "Listing", "EscrowDeal"
+  targetId   String?
+  metadata   Json?
+  ipAddress  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([actorId])
+}
