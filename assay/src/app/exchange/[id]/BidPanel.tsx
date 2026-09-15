@@ -56,8 +56,6 @@ export function BidPanel({
   const reserveMet = reservePriceCents ? currentBidCents >= reservePriceCents : true;
   const minimumNext = currentBidCents + bidIncrementCents;
 
-  const canBid = viewer.signedIn && viewer.kycVerified && viewer.proofOfFundsVerified && viewer.ndaSigned && !ended;
-
   async function placeBid(amountCents: number, kind: "bid" | "buyNow") {
     setLoading(kind);
     setError(null);
@@ -134,7 +132,7 @@ export function BidPanel({
             </div>
           )}
 
-          <div className="my-4.5 h-px bg-line-soft" />
+          <div className="my-4 h-px bg-line-soft" />
 
           {!viewer.signedIn ? (
             <FrictionNote
