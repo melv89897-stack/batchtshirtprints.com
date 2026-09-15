@@ -21,8 +21,14 @@ const router = express.Router();
 // header rather than Stripe returning a clean 401, which is easy to
 // misdiagnose as a network/connectivity problem.
 const rawStripeKey = process.env.STRIPE_SECRET_KEY?.trim();
+// Stripe's default HTTP client (fetch/undici-based on modern Node) manages
+// its own DNS resolution and ignores dns.setDefaultResultOrder(), so the
+// earlier IPv4-preference fix never actually reached it. Forcing the
+// classic Node http/https-based client makes that setting take effect,
+// which is the known fix for StripeConnectionError on hosts (Render's
+// free tier included) where the default path can't complete a connection.
 const stripe = rawStripeKey
-  ? new Stripe(rawStripeKey)
+  ? new Stripe(rawStripeKey, { httpClient: Stripe.createNodeHttpClient() })
   : null;
 
 const FRONTEND = process.env.CORS_ORIGIN || 'http://localhost:5173';
