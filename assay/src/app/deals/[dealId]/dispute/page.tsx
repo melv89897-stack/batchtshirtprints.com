@@ -304,7 +304,7 @@ function DisputeSteps({ dispute }: { dispute: Dispute }) {
             </div>
             {i < steps.length - 1 && <div className={`w-0.5 flex-1 min-h-[26px] ${s.done ? "bg-trust" : "bg-line"}`} />}
           </div>
-          <div className="pb-4.5">
+          <div className="pb-[18px]">
             <div className={`text-sm font-semibold ${s.done ? "text-ink" : "text-sub"}`}>{s.t}</div>
             <div className="mt-0.5 text-[12.5px] text-sub-light">{s.d}</div>
           </div>
