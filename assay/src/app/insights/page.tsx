@@ -1,7 +1,7 @@
 import { BadgeCheck, Flame, LineChart, Sparkles, Users, Zap } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatCents, formatMultiple } from "@/lib/format";
-import { Kicker, H2, Sub, Panel, wrap, section } from "@/components/ui/Section";
+import { Kicker, H2, Sub, Panel, wrap } from "@/components/ui/Section";
 import { NewsletterSignup } from "./NewsletterSignup";
 
 // ---------- data shaping ----------
@@ -152,7 +152,7 @@ export default async function InsightsPage() {
   const maxCategoryMultiple = Math.max(1, ...data.categoryStats.map((c) => c.avgMultiple ?? 0));
 
   return (
-    <div className={`${section} pt-10`}>
+    <div className="pb-[72px] pt-10">
       <div className={wrap}>
         <div className="mb-8 flex items-center justify-between gap-3">
           <Kicker>The Assay Index</Kicker>

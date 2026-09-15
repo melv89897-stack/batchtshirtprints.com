@@ -103,6 +103,9 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                     </span>
                   )}
                 </div>
+                <div className="mt-1.5 font-ui text-[12px] text-sub-light">
+                  Listed by {listing.seller.displayName ?? "a verified seller"} · {listing.seller.reputationScore} rep
+                </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <Seal size={48} />
@@ -139,7 +142,6 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
               <Metric label="Gross margin" value={formatPercent(listing.grossMargin)} />
               <Metric label="Net churn" value={formatPercent(listing.netChurn)} />
               <Metric label="ARR multiple" value={formatMultiple(listing.arrMultiple)} />
-              <Metric label="Seller reputation" value={String(listing.seller.reputationScore)} />
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <HallmarkBadge ok={listing.stripeVerified} label="Stripe verified" />
