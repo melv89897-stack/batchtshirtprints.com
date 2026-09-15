@@ -15,8 +15,14 @@ dns.setDefaultResultOrder('ipv4first');
 
 const router = express.Router();
 
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+// .trim() guards against a stray leading/trailing space or newline sneaking
+// in when a key is copy-pasted through a browser/terminal — with the raw
+// value, Node's http client throws at the transport layer on an invalid
+// header rather than Stripe returning a clean 401, which is easy to
+// misdiagnose as a network/connectivity problem.
+const rawStripeKey = process.env.STRIPE_SECRET_KEY?.trim();
+const stripe = rawStripeKey
+  ? new Stripe(rawStripeKey)
   : null;
 
 const FRONTEND = process.env.CORS_ORIGIN || 'http://localhost:5173';
@@ -96,7 +102,7 @@ async function ensureProducts() {
     console.log(`  STRIPE_PRICE_STARTER=${priceIds.starter}`);
     console.log(`  STRIPE_PRICE_PRO=${priceIds.pro}`);
   } catch (err) {
-    console.error('  Stripe setup error:', err.message);
+    console.error('  Stripe setup error:', err.message, '| type:', err.type, '| code:', err.code, '| detail:', err.raw?.message || err.detail || 'n/a');
   }
 }
 

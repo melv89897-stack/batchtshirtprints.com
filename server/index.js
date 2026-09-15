@@ -18,6 +18,12 @@ const TOOLS_DIR = path.join(__dirname, '..', 'public', 'tools');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Render (like any platform-as-a-service) puts the app behind a reverse
+// proxy that sets X-Forwarded-For. Without telling Express to trust it,
+// express-rate-limit refuses to use it as a client-IP source and throws on
+// every request instead of just rate-limiting by the wrong IP.
+app.set('trust proxy', 1);
+
 if (!process.env.JWT_SECRET) {
   console.warn('\n  ⚠ JWT_SECRET is not set in .env — a new random secret will be generated on every restart, which logs everyone out. Set a fixed 64-char random string in .env before deploying.\n');
 }
