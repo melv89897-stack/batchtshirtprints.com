@@ -157,43 +157,42 @@ app.get('/api/health', (_req, res) => {
 // but should be removed once the live Stripe connectivity issue is
 // diagnosed. Tests outbound HTTPS to Stripe two different ways so we can
 // see the *actual* connection error instead of the SDK's generic wrapper.
-app.get('/api/debug/network', async (_req, res) => {
+// Requires a logged-in session, and never returns key material in the HTTP
+// response — everything sensitive-adjacent goes to the server's own logs
+// (visible only to the account owner via the Render dashboard), never to
+// the client.
+app.get('/api/debug/network', requireAuth, async (_req, res) => {
   /** @type {Record<string, any>} */
   const result = {};
 
+  const rawKey = process.env.STRIPE_SECRET_KEY || '';
+  const key = rawKey.trim();
+  // Confirms the value actually stored in Render's environment is what we
+  // expect (right prefix, right length, no stray whitespace/newline from a
+  // copy-paste) without logging enough of it to be usable by anyone with
+  // log access other than the account owner.
+  result.keyPreview = {
+    length: key.length,
+    rawLength: rawKey.length,
+    startsWith: key.slice(0, 12),
+    endsWith: key.slice(-6),
+    hasWhitespaceOrNewline: /\s/.test(rawKey),
+  };
+
   try {
     const r = await fetch('https://api.stripe.com/v1/balance', {
-      headers: { Authorization: 'Bearer sk_test_invalid_probe' },
+      headers: { Authorization: `Bearer ${key}` },
       signal: AbortSignal.timeout(10000),
     });
-    result.fetch = { ok: true, status: r.status };
+    const body = await r.json().catch(() => null);
+    result.realKeyTest = { ok: true, status: r.status, stripeErrorType: body?.error?.type, stripeErrorMessage: body?.error?.message };
   } catch (e) {
     const err = /** @type {any} */ (e);
-    result.fetch = { ok: false, message: err.message, cause: err.cause ? { message: err.cause.message, code: err.cause.code } : null };
+    result.realKeyTest = { ok: false, message: err.message, cause: err.cause ? { message: err.cause.message, code: err.cause.code } : null };
   }
 
-  try {
-    const https = await import('node:https');
-    await new Promise((resolve) => {
-      const req = https.request('https://api.stripe.com/v1/balance', { timeout: 10000 }, (r) => {
-        result.https = { ok: true, status: r.statusCode };
-        r.resume();
-        resolve(undefined);
-      });
-      req.on('error', (e) => {
-        const err = /** @type {any} */ (e);
-        result.https = { ok: false, message: err.message, code: err.code };
-        resolve(undefined);
-      });
-      req.on('timeout', () => { req.destroy(); result.https = { ok: false, message: 'timeout' }; resolve(undefined); });
-      req.end();
-    });
-  } catch (e) {
-    const err = /** @type {any} */ (e);
-    result.https = { ok: false, message: err.message };
-  }
-
-  res.json(result);
+  console.log('  [debug/network]', JSON.stringify(result));
+  res.json({ ok: true, message: 'Result written to the server logs — check the Render Logs tab.' });
 });
 
 // ── Static tool pages ────────────────────────────────────────────────────────
