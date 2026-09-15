@@ -110,6 +110,15 @@ export async function confirmHandoverComplete(actor: User, dealId: string) {
     throw new ForbiddenError("Only the buyer can confirm handover.");
   }
 
+  // Only valid from the pre-inspection states. Without this, handover items
+  // (which are never reset to not-done) let a buyer call this again on a
+  // deal that has already reached INSPECTION/RELEASED/DISPUTED/REFUNDED,
+  // resetting it back to a fresh INSPECTION window and reopening a deal
+  // whose funds may already have moved.
+  if (deal.status !== "FUNDS_SECURED" && deal.status !== "TRANSFERRING") {
+    throw new ForbiddenError("Handover has already been confirmed for this deal.");
+  }
+
   const allDone = deal.handoverItems.length > 0 && deal.handoverItems.every((i) => i.done);
   if (!allDone) throw new ForbiddenError("Not every asset has been transferred yet.");
 
@@ -208,6 +217,19 @@ export async function settleDisputedDeal(
   dealId: string,
   resolution: "REFUND_BUYER" | "RELEASE_SELLER" | "SPLIT",
 ) {
+  const deal = await db.escrowDeal.findUnique({ where: { id: dealId } });
+  if (!deal) throw new Error("Deal not found.");
+  // A dispute resolution only ever makes sense against a deal that is
+  // actually frozen in DISPUTED (freezeDealForDispute is the only path that
+  // gets a deal here). Without this guard, a deal that was already
+  // RELEASED or REFUNDED — including one bounced back to DISPUTED via the
+  // confirm-handover-again bug this guard also closes off — could be
+  // settled a second time, e.g. refunding a buyer whose seller was already
+  // paid out.
+  if (deal.status !== "DISPUTED") {
+    throw new ForbiddenError("This deal is not currently under an open dispute.");
+  }
+
   if (escrowMode() === "stripe") {
     // TODO: perform the real Stripe transfer/refund for this resolution here.
   }
