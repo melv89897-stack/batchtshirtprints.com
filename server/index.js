@@ -153,6 +153,49 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+// TEMPORARY diagnostic route — not sensitive (no secrets in the response),
+// but should be removed once the live Stripe connectivity issue is
+// diagnosed. Tests outbound HTTPS to Stripe two different ways so we can
+// see the *actual* connection error instead of the SDK's generic wrapper.
+app.get('/api/debug/network', async (_req, res) => {
+  /** @type {Record<string, any>} */
+  const result = {};
+
+  try {
+    const r = await fetch('https://api.stripe.com/v1/balance', {
+      headers: { Authorization: 'Bearer sk_test_invalid_probe' },
+      signal: AbortSignal.timeout(10000),
+    });
+    result.fetch = { ok: true, status: r.status };
+  } catch (e) {
+    const err = /** @type {any} */ (e);
+    result.fetch = { ok: false, message: err.message, cause: err.cause ? { message: err.cause.message, code: err.cause.code } : null };
+  }
+
+  try {
+    const https = await import('node:https');
+    await new Promise((resolve) => {
+      const req = https.request('https://api.stripe.com/v1/balance', { timeout: 10000 }, (r) => {
+        result.https = { ok: true, status: r.statusCode };
+        r.resume();
+        resolve(undefined);
+      });
+      req.on('error', (e) => {
+        const err = /** @type {any} */ (e);
+        result.https = { ok: false, message: err.message, code: err.code };
+        resolve(undefined);
+      });
+      req.on('timeout', () => { req.destroy(); result.https = { ok: false, message: 'timeout' }; resolve(undefined); });
+      req.end();
+    });
+  } catch (e) {
+    const err = /** @type {any} */ (e);
+    result.https = { ok: false, message: err.message };
+  }
+
+  res.json(result);
+});
+
 // ── Static tool pages ────────────────────────────────────────────────────────
 // The quick-start guide is plain instructions (no generation, no login needed
 // in the original standalone product) — kept public. The three actual
