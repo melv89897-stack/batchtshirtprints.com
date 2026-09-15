@@ -1,10 +1,17 @@
 import express from 'express';
+import dns from 'dns';
 import Stripe from 'stripe';
 import { requireAuth } from './auth.js';
 import {
   findUserByStripeCustomer, updateUser,
   wasWebhookEventProcessed, markWebhookEventProcessed,
 } from './db.js';
+
+// Some hosts (Render's free tier included) resolve api.stripe.com to an
+// IPv6 address first, and the outbound connection over IPv6 can silently
+// fail/retry-exhaust while IPv4 would have worked fine. Preferring IPv4
+// avoids that class of "connection to Stripe" error.
+dns.setDefaultResultOrder('ipv4first');
 
 const router = express.Router();
 
